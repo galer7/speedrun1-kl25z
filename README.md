@@ -14,3 +14,5 @@ https://mcuoneclipse.com/2014/11/01/illustrated-step-by-step-instructions-updati
 
 Also this blog:
 https://mcuoneclipse.com/category/boards/kl25z-freedom-board/
+
+Introduction to CodeWarrior: http://www.eng.ox.ac.uk/~labejp/Robots/codewarrior.pdf?fbclid=IwAR27u7KKEBrDSAykt0YrFl1IEFlOPqe6pIsgI7qhjnp7K4wM3aTxN711LgY
