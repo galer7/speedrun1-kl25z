@@ -1,6 +1,8 @@
 # frdm-kl25z
 Repository for all things FRDM-KL25Z microcontroller 
 
+It is safe to say that you need to operate the microcontroller from an operating system which is Windows 7 or older. If you try to apply any changes (update the bootloader or the firmware) on Windows 8+, they won't be saved. (See this for reference: https://community.nxp.com/thread/357196)
+
 Getting Started MBED Page:
 https://os.mbed.com/platforms/KL25Z/
 
