@@ -1,2 +1,4 @@
 # frdm-kl25z
-Repository for all things kl25z microcontroller 
+Repository for all things FRDM-KL25Z microcontroller 
+
+Containing the data sheets
