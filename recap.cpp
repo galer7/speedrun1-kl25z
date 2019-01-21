@@ -3,10 +3,17 @@
 	*** MAIN PROGRAM: (cu x inseamna ca am inteles) ***
 	ORDER OF OPERATIONS: 
 
+<<<<<<< HEAD
 	1) x - citeste switchuri (218, declaration: 391)
 	2) x - reset camera (233 - 236)
 	3) x  - grab camera frame (239, declaration: 413)
 	4) derivate line scan (248, declaration: 522)
+=======
+	1) x - citeste switchuri
+	2) reset camera
+	3) grab camera frame
+	4) derivate line scan
+>>>>>>> 25dc40c67e7da09e3af1e3297734ce0b09fb073a
 	5) adjust lights 
 	6) find edges
 	7) review edges
@@ -25,7 +32,11 @@
 		* line position
 		* steer setting
 		* left/right setting
+<<<<<<< HEAD
 		* max nr. of frames = macro.
+=======
+		* max nr. of frammes = macro.
+>>>>>>> 25dc40c67e7da09e3af1e3297734ce0b09fb073a
 	- readSwitches:
 		* switch 2 ON/OFF: log data/don't log.
 		* switch 3 ON/OFF: risky driving/ don't.
@@ -37,4 +48,8 @@
 						* 2 = time of operations
 						* 3 = output with delay (?)
 	- pentru a porni/opri: buton A
+<<<<<<< HEAD
+=======
+
+>>>>>>> 25dc40c67e7da09e3af1e3297734ce0b09fb073a
 */
