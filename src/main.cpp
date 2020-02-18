@@ -176,7 +176,7 @@ int main()
     // TERMINAL TYPE  
     //PC.baud(115200); // works with Excel and TeraTerm 
     PC.baud(9600); // works with USB Serial Monitor Lite: https://play.google.com/store/apps/details?id=jp.ksksue.app.terminal; doesn't work > 9600
-    TFC_TickerObj.attach_us(&TFC_TickerUpdate,2000); // update ticker array every 2mS (2000 uS)
+    TFC_TickerObj.attach_us(&TFC_TickerUpdate, 2000); // update ticker array every 2mS (2000 uS)
    
     TFC_Init();
     
@@ -185,9 +185,10 @@ int main()
         //TFC_Task must be called in your main loop.  This keeps certain processing happy (I.E. Serial port queue check)
         //   TFC_Task();
 
-
+        TFC_SetBatteryLED(TFC_GetDIP_Switch());
         // If DIP switch 1 is high, then run MCP, else Demo program
-        if(TFC_GetDIP_Switch()&0x01)
+        // TODO: adaugat switch pt fiecare subprogram / proba
+        if(TFC_GetDIP_Switch() & 0x01)
           // Run MCP
           MasterControlProgram();
         else      

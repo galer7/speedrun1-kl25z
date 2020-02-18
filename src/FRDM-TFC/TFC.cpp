@@ -445,8 +445,10 @@ uint8_t TFC_GetDIP_Switch()
 {
     uint8_t DIP_Val=0;
 
+    // get dip value...
     DIP_Val = (PTE->PDIR>>2) & 0xF;
 
+    // return uint8
     return DIP_Val;
 }
 
