@@ -699,3 +699,53 @@ void printEdgesFound()
   }
 
 }
+
+void feedbackLights()
+{
+  switch (CurrentTrackStatus)
+  {
+  case LeftLine:
+    TFC_BAT_LED0_ON;
+    TFC_BAT_LED1_OFF;
+    TFC_BAT_LED2_OFF;
+    TFC_BAT_LED3_OFF;
+    break;
+  case RightLine:
+    TFC_BAT_LED0_OFF;
+    TFC_BAT_LED1_OFF;
+    TFC_BAT_LED2_OFF;
+    TFC_BAT_LED3_ON;
+    break;
+  case LineFound:
+    TFC_BAT_LED0_ON;
+    TFC_BAT_LED1_OFF;
+    TFC_BAT_LED2_OFF;
+    TFC_BAT_LED3_ON;
+    break;
+  case StartGateFound:
+    TFC_BAT_LED0_OFF;
+    TFC_BAT_LED1_ON;
+    TFC_BAT_LED2_ON;
+    TFC_BAT_LED3_OFF;
+    break;
+  case StraightRoad:
+    TFC_BAT_LED0_ON;
+    TFC_BAT_LED1_ON;
+    TFC_BAT_LED2_ON;
+    TFC_BAT_LED3_ON;
+    break;
+  case FilteredLine:
+    TFC_BAT_LED0_ON;
+    TFC_BAT_LED1_OFF;
+    TFC_BAT_LED2_ON;
+    TFC_BAT_LED3_OFF;
+    break;
+  default:
+    TFC_BAT_LED0_OFF;
+    TFC_BAT_LED1_OFF;
+    TFC_BAT_LED2_OFF;
+    TFC_BAT_LED3_OFF;
+    break;
+  }
+
+}

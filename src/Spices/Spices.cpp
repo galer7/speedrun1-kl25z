@@ -205,7 +205,6 @@ void readSwitches()
   else
     startGateStop = false;
 
-
 }
 
 void grabCameraFrame()
