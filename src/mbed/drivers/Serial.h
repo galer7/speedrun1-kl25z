@@ -19,8 +19,6 @@
 
 #include "platform/platform.h"
 
-#if DEVICE_SERIAL || defined(DOXYGEN_ONLY)
-
 #include "platform/Stream.h"
 #include "SerialBase.h"
 #include "platform/PlatformMutex.h"
@@ -115,4 +113,3 @@ protected:
 
 #endif
 
-#endif

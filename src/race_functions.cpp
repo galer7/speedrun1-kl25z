@@ -1,7 +1,8 @@
 // aici adaugam functiile de scanare care vor fi folosite in (aproape) toate celelalte programe
 
-#include "FRDM-TFC/TFC.h"
-#include "mbed/mbed.h"
+#include "common.h"
+#include TFC_PATH
+#include MBED_PATH
 
 // ____________________ CONSTANTS __________________:
 

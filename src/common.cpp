@@ -1,6 +1,6 @@
-#include "mbed.h"
-
 #include "common.h"
+
+#include MBED_PATH
 
 Serial PC(USBTX,USBRX); 
 

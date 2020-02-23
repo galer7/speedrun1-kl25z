@@ -1,5 +1,7 @@
+
+#include "common.h"
 #include "race_functions.cpp"
-#include "FRDM-TFC/TFC.h"
+#include TFC_PATH
 
 void main()
 {
