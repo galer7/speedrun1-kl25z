@@ -11,7 +11,7 @@ Don't forget to add last 2 dependencies to PATH.
 
 Specifically for GNU ARM toolchain:
 
-C:\Program Files (x86)\GNU Tools ARM Embedded\6 2017-q2-update\bin)
+C:\Program Files (x86)\GNU Tools ARM Embedded\6 2017-q2-update\bin
 
 # Getting started:
 
