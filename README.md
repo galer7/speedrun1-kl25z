@@ -6,9 +6,9 @@ Local environment for KL25Z development using Makefile
 ```
 git clone git@github.com:gubi7g/speedrun1-kl25z.git
 cd speedrun1-kl25z
-make
+make (WORKS ONLY ON GIT CMD. DON'T ASK ME WHY!?!?!?)
 python -m venv env
-cd env/Scripts/activate
+env/Scripts/activate
 pip install -r requirements.txt
 ```
 
