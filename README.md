@@ -27,12 +27,6 @@ env/Scripts/activate
 pip install -r requirements.txt
 ```
 
-# To write to board:
-
-```
-write.ps1 (Just for Windows PS)
-```
-
 # Camera:
 
 ```
