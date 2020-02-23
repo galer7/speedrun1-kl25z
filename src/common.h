@@ -1,7 +1,8 @@
 // SA SCHIMBI ASTA CAND UPLOADEZI PE MBED:
 
-#define MBED_PATH "./../mbed/mbed.h"
-#define TFC_PATH "./../FRDM-TFC/TFC.h"
+#define MBED_PATH "mbed.h"
+#define TFC_PATH "TFC.h"
+
 
 #include MBED_PATH
 #include TFC_PATH

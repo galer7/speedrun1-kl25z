@@ -18,8 +18,6 @@ void MainRace()
   feedbackLights();
   SpeedControl();
   Drive();
-
-
 }
 
 void SpeedLimit()
@@ -79,9 +77,10 @@ void chooseAndRunRace()
 
 int main()
 {
-  PC.baud(115200);
-  TFC_Init();
-
+    PC.baud(115200); // works with Excel and TeraTerm 
+   
+    TFC_Init();
+    
   while (1) {
     chooseAndRunRace();
   }

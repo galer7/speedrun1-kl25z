@@ -13,11 +13,8 @@ with serial.Serial('COM3', 115200) as ser:
     line = ser.readline()
     try:
 
-      cameraLine = [x for x in line.decode('utf-8').split(',')]
-
-      cameraLine[0] = cameraLine[0][1:]
-      cameraLine[-1] = cameraLine[-1][:-2]
-      cameraLine = [int(x) for x in cameraLine]
+      cameraLine = [int(x) for x in line.decode('utf-8').split(',')]
+      print(cameraLine)
       avgLine = [sum(cameraLine) / 128 for x in range(128)]
       # print(cameraLine)
       plt.clf()
