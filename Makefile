@@ -321,7 +321,7 @@ $(PROJECT).bin: $(PROJECT).elf
 	$(ELF2BIN) -O binary $< $@
 	+@echo "===== bin file ready to flash: $(OBJDIR)/$@ ====="
 	+@echo "===== Writting to device... ====="
-	cp $@ /g/
+	yes | cp -rf $@ /g/
 	+@echo "===== Succesfully wrote to device... ====="
 	
 
