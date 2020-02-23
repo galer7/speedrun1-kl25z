@@ -79,6 +79,9 @@ void chooseAndRunRace()
 
 int main()
 {
+  PC.baud(115200);
+  TFC_Init();
+
   while (1) {
     chooseAndRunRace();
   }
