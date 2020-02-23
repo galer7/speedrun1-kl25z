@@ -1,7 +1,8 @@
 
 #include "common.h"
-#include "race_functions.cpp"
+#include "race_functions.h"
 #include TFC_PATH
+#include "serialCamera.h"
 
 void MainRace()
 {
@@ -42,24 +43,31 @@ void chooseAndRunRace()
 {
   switch (TFC_GetDIP_Switch())
   {
-    case: 0x08
-      MainRace();
-      forceFeedbackLights(8);
-      break;
+    case 0x08:
+        serialCamera();
+        forceFeedbackLights(8);
+        break;
+        
+      
 
-    case: 0x09
+    case 0x09:
       SpeedLimit();
       forceFeedbackLights(9);
       break;
 
-    case: 0x0A
+    case 0x0A:
       ObstacleRace();
       forceFeedbackLights(10);
       break;
 
-    case: 0x0B
+    case 0x0B:
       EightRace();
       forceFeedbackLights(11);
+      break;
+      
+    case 0x0F:
+      MainRace();
+      forceFeedbackLights(8);
       break;
 
     default:
@@ -69,9 +77,9 @@ void chooseAndRunRace()
 }
 
 
-void main()
+int main()
 {
   while (1) {
-    chooseAndRunRace()
+    chooseAndRunRace();
   }
 }

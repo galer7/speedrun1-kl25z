@@ -34,6 +34,10 @@
 bool debugMode = false;
 Timer timer;
 
+#define UNKNOWN_COUNT_MAX  40                      // max value to allow for unknown track conditions before killing engine
+#define STARTGATEFOUNDMAX  0                       // max value to allow for finding starting gate before killing engine
+#define STARTGATEDELAY     50                      // Delay before searching for starting gate to kill engine
+
 // ___________________VARIABLES__________________:
 
 
@@ -108,8 +112,10 @@ bool killSwitch = false;             // whether to enable Kill Switch (allow eng
 bool startGateStop = false;         // whether to stop or not depending on starting gate reading
 bool doRisky = false;               // race style-- whether conservative or risky
 
+
+
 // timer stuff
-Timer timer;
+
 int after_time, before_time, start_time, last_start_time;
 bool run_once = false;
 
@@ -394,25 +400,7 @@ void reviewEdges()
   }
 }
 
-void ActOnTrackStatus()
-{
 
-  if (CurrentTrackStatus == StartGateFound)       // STARTING GATE FOUND
-  {
-    if (startGateStop)
-    {
-      if (StartGateFoundCount > STARTGATEFOUNDMAX)
-      {
-        go = false;   // STOP!!
-      }
-    }
-
-  }
-  SteeringControl();
-  Steer();
-
-
-}
 
 // SPEED AND CONTROL
 
@@ -471,6 +459,26 @@ void Steer()
   }
 
   TFC_SetServo(0, CurrentSteerSetting);
+}
+
+void ActOnTrackStatus()
+{
+
+  if (CurrentTrackStatus == StartGateFound)       // STARTING GATE FOUND
+  {
+    if (startGateStop)
+    {
+      if (StartGateFoundCount > STARTGATEFOUNDMAX)
+      {
+        go = false;   // STOP!!
+      }
+    }
+
+  }
+  SteeringControl();
+  Steer();
+
+
 }
 
 void SpeedControl()
