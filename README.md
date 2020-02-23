@@ -14,7 +14,7 @@ Specifically for GNU ARM toolchain:
 C:\Program Files (x86)\GNU Tools ARM Embedded\6 2017-q2-update\bin
 
 ...and python:
-C:\Users\ <user> \AppData\Local\Programs\Python\Python38-32
+C:\Users\user\AppData\Local\Programs\Python\Python38-32
 
 # Getting started:
 
