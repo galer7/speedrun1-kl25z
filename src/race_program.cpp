@@ -3,36 +3,6 @@
 #include "race_functions.cpp"
 #include TFC_PATH
 
-void main()
-{
-  while (1) {
-    chooseAndRunRace()
-  }
-}
-
-void chooseAndRunRace()
-{
-  switch (TFC_GetDIP_Switch())
-  {
-    case: 0x08
-      MainRace();
-      break;
-    case: 0x09
-      SpeedLimit();
-      break;
-    case: 0x10
-      ObstacleRace();
-      break;
-    case: 0x11
-      EightRace();
-      break;
-    default:
-      printf("Faied to select a program...");
-      break;
-  }
-}
-
-
 void MainRace()
 {
   // main timed race
@@ -64,4 +34,44 @@ void ObstacleRace()
 void EightRace()
 {
   // normal MainRace() program, maybe we can improve the steering a bit.
+}
+
+
+
+void chooseAndRunRace()
+{
+  switch (TFC_GetDIP_Switch())
+  {
+    case: 0x08
+      MainRace();
+      forceFeedbackLights(8);
+      break;
+
+    case: 0x09
+      SpeedLimit();
+      forceFeedbackLights(9);
+      break;
+
+    case: 0x0A
+      ObstacleRace();
+      forceFeedbackLights(10);
+      break;
+
+    case: 0x0B
+      EightRace();
+      forceFeedbackLights(11);
+      break;
+
+    default:
+      printf("Faied to select a program...");
+      break;
+  }
+}
+
+
+void main()
+{
+  while (1) {
+    chooseAndRunRace()
+  }
 }

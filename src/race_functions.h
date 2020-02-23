@@ -750,3 +750,39 @@ void feedbackLights()
   }
 
 }
+
+void forceFeedbackLights(int var)
+{
+  switch (var) {
+  case 8:
+    TFC_BAT_LED0_ON;
+    TFC_BAT_LED1_OFF;
+    TFC_BAT_LED2_OFF;
+    TFC_BAT_LED3_OFF;
+    break;
+  case 9:
+    TFC_BAT_LED0_ON;
+    TFC_BAT_LED1_OFF;
+    TFC_BAT_LED2_OFF;
+    TFC_BAT_LED3_ON;
+    break;
+  case 10:
+    TFC_BAT_LED0_ON;
+    TFC_BAT_LED1_OFF;
+    TFC_BAT_LED2_ON;
+    TFC_BAT_LED3_OFF;
+    break;
+  case 11:
+    TFC_BAT_LED0_ON;
+    TFC_BAT_LED1_OFF;
+    TFC_BAT_LED2_ON;
+    TFC_BAT_LED3_ON;
+    break;
+  default:
+    TFC_BAT_LED0_OFF;
+    TFC_BAT_LED1_OFF;
+    TFC_BAT_LED2_OFF;
+    TFC_BAT_LED3_OFF;
+    break;
+  }
+}
