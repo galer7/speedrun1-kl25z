@@ -22,14 +22,14 @@ C:\Users\user\AppData\Local\Programs\Python\Python38-32
 git clone git@github.com:gubi7g/speedrun1-kl25z.git
 cd speedrun1-kl25z
 make (WORKS ONLY ON GIT CMD. DON'T ASK ME WHY!?!?!?)
-python -m venv env
-env/Scripts/activate
-pip install -r requirements.txt
 ```
 
 # Camera:
 
 ```
+python -m venv env
+env/Scripts/activate
+pip install -r requirements.txt
 python camera.py
 ```
 
