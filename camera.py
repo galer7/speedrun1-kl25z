@@ -32,11 +32,12 @@ def derivLineScan(lineScan):
 def returnEdges(cameraLine, derivLine, thNeg, thPos):
   thisFrameNegEdges = []
   thisFramePosEdges = []
-  for ind, x, derivValue in zip(enumerate(cameraLine), derivLine):
-    if derivValue > thPos:
+
+  for ind, (x, derivValue) in enumerate(zip(cameraLine, derivLine)):
+    if derivValue >= thPos:
       thisFramePosEdges.append([ind, x])
     
-    if derivValue < thNeg:
+    if derivValue <= thNeg:
       thisFrameNegEdges.append([ind, x])
 
   return thisFrameNegEdges, thisFramePosEdges
@@ -44,39 +45,49 @@ def returnEdges(cameraLine, derivLine, thNeg, thPos):
 with serial.Serial('COM3', 115200) as ser:
   frameNr = 0
   while True:
-    if not frameNr >= 32:
+    if not frameNr >= 16:
       # ser.flushInput()
       # ser.flushOutput()
       line = ser.readline()
+      # print([int(x) for x in line.decode('ascii').split(',')])
       frameNr += 1
       try:
-
         cameraLine = [int(x) for x in line.decode('utf-8').split(',')]
         avgLine = [sum(cameraLine) / 128 for x in range(128)]
         plotDerivLineScan = derivLineScan(cameraLine)
         negEdges, posEdges = returnEdges(cameraLine, plotDerivLineScan, -avgLine[0]/10, avgLine[0]/10)
 
-  
-        print(cameraLine)
         plt.clf()
         plt.axis([0, 127, -2000, 5000])
-
 
         plt.plot(xAxis, cameraLine)
         plt.plot(xAxis, avgLine)
         plt.plot(xAxis, plotDerivLineScan)
         plt.plot(xAxis, [x/10 for x in avgLine], [-x/10 for x in avgLine])
+        try:
 
-        plt.plot(*zip(*posEdges))
-        plt.plot(*zip(*negEdges))
+          x, y = zip(*posEdges)
+          plt.scatter(x, y, color='green')
+          x, y = zip(*negEdges)
+
+          plt.scatter(x, y, color='red')
+        except:
+          pass
 
         plt.pause(0.00001)
-      except UnicodeDecodeError:
+      except UnicodeDecodeError as e:
+        # print(e)
+        print(line)
         pass
-      except ValueError:
+      except ValueError  as e:
+        print(e)
         pass
-      except KeyboardInterrupt:
+      except KeyboardInterrupt as e:
+        print(e)
         pass
+      except Exception as e:
+        print(e)
+        break
     else: 
       ser.flushInput()
       ser.flushOutput()
