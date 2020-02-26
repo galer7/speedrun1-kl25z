@@ -133,7 +133,7 @@ void acquireSamplesAndIntensity()
 {
   // putem calcula avgIntensity de aici deja...
   averIntensity = 0;
-  for (i = 0; i < NUM_LINE_SCAN; i++)
+  for (int i = 0; i < NUM_LINE_SCAN; i++)
   {
       GrabLineScanImage0[i] = TFC_LineScanImage0[i];
 
@@ -166,11 +166,11 @@ void derivScanAndFindEdges(uint16_t* LineScanDataIn, float* DerivLineScanDataOut
   nrDifferentNegEdges = 0;
 
   float DerVal = 0;
+  float upperDerVal, lowerDerVal;
+  int minCnt = FILTER_ENDS;
+  int maxCnt = NUM_LINE_SCAN - FILTER_ENDS;
 
-  minCnt = FILTER_ENDS;
-  maxCnt = NUM_LINE_SCAN - FILTER_ENDS;
-
-  for (i = minCnt; i < maxCnt; i++)
+  for (int i = minCnt; i < maxCnt; i++)
   {
 
     if (i == minCnt)                         // start point
@@ -238,7 +238,7 @@ void derivScanAndFindEdges(uint16_t* LineScanDataIn, float* DerivLineScanDataOut
 
 void decideLineFromEdges()
 {
-  lastMarginPosition = marginPosition
+  lastMarginPosition = marginPosition;
 
   if (nrDifferentNegEdges == 0 && nrDifferentPosEdges == 0)
   {
@@ -267,7 +267,7 @@ void decideLineFromEdges()
     CurrentTrackStatus = RightLine;
   }
 
-  else if (nrDifferentNegEdges == 2 && nrDifferentPosEdges == 2 && (((NegEdges[0] - PoseEdges[0]) <= MAX_LINE_WIDTH && (NegEdges[0] - PosEdges[0]) >= MIN_LINE_WIDTH) && ((NegEdges[1] - PoseEdges[1]) <= MAX_LINE_WIDTH && (NegEdges[1] - PosEdges[1]) >= MIN_LINE_WIDTH)))
+  else if (nrDifferentNegEdges == 2 && nrDifferentPosEdges == 2 && (((NegEdges[0] - PosEdges[0]) <= MAX_LINE_WIDTH && (NegEdges[0] - PosEdges[0]) >= MIN_LINE_WIDTH) && ((NegEdges[1] - PosEdges[1]) <= MAX_LINE_WIDTH && (NegEdges[1] - PosEdges[1]) >= MIN_LINE_WIDTH)))
   {
     CurrentTrackStatus = StartGateFound;
   }
@@ -277,213 +277,6 @@ void decideLineFromEdges()
   }
 
 }
-
-
-void findEdges_v2(float* derivLineScanData)
-{
-  
-  int i;
-
-  int minCnt = FILTER_ENDS;
-  int maxCnt = NUM_LINE_SCAN - FILTER_ENDS;
-
-  numNegEdges = 0;                              // count of neg edges found thus far
-  numPosEdges = 0;                              // count of pos edges found thus far
-
-  float holderNeg[NUM_LINE_SCAN];
-  float holderPos[NUM_LINE_SCAN];
-
-  int divNeg = 0;
-  int divPos = 0;
-
-  int sumNeg = 0;
-  int sumPos = 0;
-
-  for (i = minCnt; i < maxCnt; i++) // print one line worth of data from Camera 0
-  {
-
-    if (derivLineScanData[i] <= NegDerivThreshold)          // NEGATIVE EDGE FOUND!
-      holderNeg[i] = i;
-    else
-      holderNeg[i] = 300;
-
-    if (derivLineScanData[i] > PosDerivThreshold)
-      holderPos[i] = i;
-    else
-      holderPos[i] = 300;
-  }
-
-  for (i = minCnt;i < maxCnt;i++)
-  {
-    if (holderNeg[i] != 300)
-    {
-      divNeg++;
-      sumNeg += holderNeg[i];
-    }
-
-    else
-    {
-      if (divNeg != 0)
-      {
-        NegEdges[numNegEdges] = sumNeg / divNeg;
-        numNegEdges++;
-        sumNeg = 0;
-        divNeg = 0;
-      }
-
-    }
-
-    if (holderPos[i] != 300)
-    {
-      divPos++;
-      sumPos += holderPos[i];
-    }
-    else
-    {
-      if (divPos != 0)
-      {
-        PosEdges[numPosEdges] = sumPos / divPos;
-        numPosEdges++;
-        sumPos = 0;
-        divPos = 0;
-      }
-
-    }
-
-  }
-}
-
-void reviewEdges()
-{
-  int i;
-  LastTrackStatus = CurrentTrackStatus;
-  CurrentTrackStatus = Unknown;
-  marginPosition = cameraCenter;
-
-  if (numPosEdges == 0 && numNegEdges == 0)
-  {
-    // de adaugat functie de average pe fiecare jumatate daca nu intra in unknown (eu zic ca e f probabil sa nu intre in unknown)
-    CurrentTrackStatus = StraightRoad;
-    lastMarginPosition = marginPosition;
-    marginPosition = lastMarginPosition;
-    UnknownCount = 0;
-  }
-  else if (numPosEdges == 1 && numNegEdges == 1)  // margine gasita
-  {
-    if (
-      ((PosEdges[0] - NegEdges[0]) >= MIN_LINE_WIDTH) &&
-      ((PosEdges[0] - NegEdges[0]) <= MAX_LINE_WIDTH)
-      )
-    {
-      CurrentTrackStatus = LineFound;                                   // report line found!
-      UnknownCount = 0;                                          // reset unknown status count
-      lastMarginPosition = marginPosition;
-      marginPosition = (PosEdges[0] + NegEdges[0]) / 2;       // update line position
-    }
-
-    if (
-      ((NegEdges[0] - PosEdges[0]) >= MIN_START_WIDTH) &&
-      ((NegEdges[0] - PosEdges[0]) <= MAX_START_WIDTH)
-      )
-    {
-      if (startRaceTicker > STARTGATEDELAY)                        // only start counting for starting gate until after delay
-        StartGateFoundCount++;
-      marginPosition = cameraCenter;
-      CurrentTrackStatus = StartGateFound;
-      UnknownCount = 0;
-    }
-
-    else
-    {
-      CurrentTrackStatus = Unknown;
-      UnknownCount++;
-      marginPosition = lastMarginPosition;
-    }
-  }
-  else if (numPosEdges == 1 && numNegEdges == 0)          // margine la STANGA
-  {
-    CurrentTrackStatus = LeftLine;                                   // report line found!
-    UnknownCount = 0;                                                 // reset unknown status count
-    lastMarginPosition = marginPosition;
-    marginPosition = PosEdges[0] - MAX_LINE_WIDTH / 2;
-    if (marginPosition < 0)
-      marginPosition = 0;
-  }
-  if (numNegEdges == 1 && numPosEdges == 0)          // margine la DREAPTA
-  {
-    CurrentTrackStatus = RightLine;
-    UnknownCount = 0;
-    lastMarginPosition = marginPosition;
-    marginPosition = NegEdges[0] + MAX_LINE_WIDTH / 2;
-    if (marginPosition > 127)
-      marginPosition = 127;
-  }
-  else if (numPosEdges == 2 && numNegEdges == 2)
-  {
-
-    if (
-      (((PosEdges[0] - NegEdges[0]) >= MIN_START_WIDTH) && ((PosEdges[0] - NegEdges[0]) <= 4.7 * MAX_LINE_WIDTH)) &&    // black left 'line'
-      (((PosEdges[1] - NegEdges[1]) >= 4.7 * MIN_LINE_WIDTH) && ((PosEdges[1] - NegEdges[1]) <= 4.7 * MAX_LINE_WIDTH)) &&    // white right 'line'
-      (((NegEdges[1] - PosEdges[0]) >= 3.7 * MIN_LINE_WIDTH) && ((NegEdges[1] - PosEdges[0]) <= 3.7 * MAX_LINE_WIDTH))       // actual track line
-      )
-    {
-      if (startRaceTicker > STARTGATEDELAY)                        // only start counting for starting gate until after delay
-        StartGateFoundCount++;
-      marginPosition = cameraCenter;
-      CurrentTrackStatus = StartGateFound;
-      UnknownCount = 0;
-    }
-    else
-    {
-      CurrentTrackStatus = Unknown;
-      UnknownCount++;
-      marginPosition = lastMarginPosition;
-    }
-  }
-  else if (numPosEdges == 1 && numNegEdges > 1)
-  {
-    for (i = 0;i < numNegEdges;i++)
-    {
-      if (((PosEdges[0] - NegEdges[i]) >= MIN_LINE_WIDTH) && (PosEdges[0] - NegEdges[i] <= MAX_LINE_WIDTH))
-      {
-        CurrentTrackStatus = FilteredLine;
-        UnknownCount = 0;
-        lastMarginPosition = marginPosition;
-        marginPosition = (PosEdges[0] + NegEdges[i]) / 2;
-        break;
-      }
-    }
-
-    if (CurrentTrackStatus != FilteredLine)
-    {
-      CurrentTrackStatus = Unknown;
-      UnknownCount++;
-      marginPosition = lastMarginPosition;
-    }
-  }
-  else if (numNegEdges == 1 && numPosEdges > 1)
-  {
-    for (i = 0;i < numPosEdges;i++)
-    {
-      if (((PosEdges[i] - NegEdges[0]) >= MIN_LINE_WIDTH) && (PosEdges[i] - NegEdges[0] <= MAX_LINE_WIDTH))
-      {
-        CurrentTrackStatus = FilteredLine;
-        UnknownCount = 0;
-        lastMarginPosition = marginPosition;
-        marginPosition = (PosEdges[i] + NegEdges[0]) / 2;
-        break;
-      }
-    }
-
-    if (CurrentTrackStatus != FilteredLine)
-    {
-      CurrentTrackStatus = Unknown;
-      UnknownCount++;
-      marginPosition = lastMarginPosition;
-    }
-  }
-}
-
 
 
 // SPEED AND CONTROL
@@ -761,35 +554,6 @@ void printDerivLineScanData(float* derivLineScanData)
       TERMINAL_PRINTF("\r\n", derivLineScanData[i]);
     else
       TERMINAL_PRINTF(", ", derivLineScanData[i]);
-  }
-
-}
-
-void printEdgesFound()
-{
-  int i;
-
-  // Check that neg edges captured ok
-  TERMINAL_PRINTF("NEGATIVE EDGES FOUND:,");
-  for (i = 0; i <= numNegEdges - 1; i++)
-  {
-    TERMINAL_PRINTF("%9.3f", NegEdges[i]);
-    if (i == numNegEdges - 1)              // when last data reached put in line return
-      TERMINAL_PRINTF("\r\n");
-    else
-      TERMINAL_PRINTF(", ");
-  }
-
-
-  // Check that pos edges captured ok
-  TERMINAL_PRINTF("POSITIVE EDGES FOUND:,");
-  for (i = 0; i <= numPosEdges - 1; i++)
-  {
-    TERMINAL_PRINTF("%9.3f", PosEdges[i]);
-    if (i == numPosEdges - 1)              // when last data reached put in line return
-      TERMINAL_PRINTF("\r\n");
-    else
-      TERMINAL_PRINTF(", ");
   }
 
 }

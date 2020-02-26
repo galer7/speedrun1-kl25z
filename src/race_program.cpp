@@ -12,7 +12,7 @@ void MainRace()
   acquireSamplesAndIntensity(); // gets samples and computes avg. light intensity
   derivScanAndFindEdges(&GrabLineScanImage0[0], &DerivLineScanImage0[0]); // computes the derivative and finds edges
   //findEdges_v2(&DerivLineScanImage0[0]);
-  decideEdges();
+  decideLineFromEdges();
   ActOnTrackStatus();
   feedbackLights();
   SpeedControl();

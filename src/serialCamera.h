@@ -4,7 +4,7 @@
 
 //#define TERMINAL_PRINTF     PC.printf
 
-int serialCamera() {
+void serialCamera() {
    
     uint32_t i = 0;
     for(i=0;i<128;i++)
