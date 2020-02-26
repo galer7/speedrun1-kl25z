@@ -29,13 +29,17 @@ def derivLineScan(lineScan):
 
   return derivLine
 
-def returnEdges(cameraLine, derivLine, th):
-  thisFrameEdges = []
+def returnEdges(cameraLine, derivLine, thNeg, thPos):
+  thisFrameNegEdges = []
+  thisFramePosEdges = []
   for ind, x, derivValue in zip(enumerate(cameraLine), derivLine):
-    if derivValue > abs(th):
-      thisFrameEdges.append([ind, x])
+    if derivValue > thPos:
+      thisFramePosEdges.append([ind, x])
+    
+    if derivValue < thNeg:
+      thisFrameNegEdges.append([ind, x])
 
-  return thisFrameEdges
+  return thisFrameNegEdges, thisFramePosEdges
 
 with serial.Serial('COM3', 115200) as ser:
   frameNr = 0
@@ -50,10 +54,9 @@ with serial.Serial('COM3', 115200) as ser:
         cameraLine = [int(x) for x in line.decode('utf-8').split(',')]
         avgLine = [sum(cameraLine) / 128 for x in range(128)]
         plotDerivLineScan = derivLineScan(cameraLine)
-        posEdges = returnEdges(cameraLine, plotDerivLineScan, avgLine[0]/10)
-        negEdges = returnEdges(cameraLine, plotDerivLineScan, -avgLine[0]/10)
+        negEdges, posEdges = returnEdges(cameraLine, plotDerivLineScan, -avgLine[0]/10, avgLine[0]/10)
 
-
+  
         print(cameraLine)
         plt.clf()
         plt.axis([0, 127, -2000, 5000])

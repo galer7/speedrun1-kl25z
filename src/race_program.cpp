@@ -9,11 +9,10 @@ void MainRace()
   // main timed race
   // TODO: implement this race without ticker just to see the new behaviour
 
-  grabCameraFrame();
-  derivativeLineScan(&GrabLineScanImage0[0], &DerivLineScanImage0[0]);
-  adjustLights();
-  findEdges_v2(&DerivLineScanImage0[0]);
-  reviewEdges();
+  acquireSamplesAndIntensity(); // gets samples and computes avg. light intensity
+  derivScanAndFindEdges(&GrabLineScanImage0[0], &DerivLineScanImage0[0]); // computes the derivative and finds edges
+  //findEdges_v2(&DerivLineScanImage0[0]);
+  decideEdges();
   ActOnTrackStatus();
   feedbackLights();
   SpeedControl();

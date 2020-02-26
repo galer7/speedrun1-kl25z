@@ -15,6 +15,7 @@
 #define MAX_START_WIDTH 25
 #define FILTER_ENDS 0   // dead pixels to ignore
 #define RANGE (NUM_LINE_SCAN - (2 * FILTER_ENDS))  // range of good pixels
+#define EDGE_WIDTH_ERROR 3
 
 // -- STEER
 #define MAX_STEER_LEFT -0.34
@@ -44,18 +45,22 @@ Timer timer;
 // -- CAMERA
 uint16_t   GrabLineScanImage0[NUM_LINE_SCAN]; // snapshot of camera data for this 'frame'
 float      DerivLineScanImage0[NUM_LINE_SCAN]; // derivative of line scan data
-float      NegEdges[NUM_LINE_SCAN]; // array-- set of where in line scan data negative edges found
-float      PosEdges[NUM_LINE_SCAN]; // array-- set of where in line scan data positive edges found
-uint16_t   numNegEdges = 0, numPosEdges = 0; // max value of valid neg and positive indices (also serves as a count of # edges found)
+int      NegEdges[NUM_LINE_SCAN]; // array that holds at which index the NegEdge is on the LineScan
+int      PosEdges[NUM_LINE_SCAN]; // array that holds at which index the PosEdge is on the LineScan
+
+int nrDifferentNegEdges = 0;
+int nrDifferentPosEdges = 0;
+
 uint16_t   MaxLightIntensity = 0;
 uint16_t   MinLightIntensity = (1 << 12);
 float      maxDerVal = 0;                          // max deriv value
 float      minDerVal = (float)(1 << 12);          // min deriv value
 float      aveDerVal = 0;                          // average deriv value
+float      averIntensity = 0.0;
 float      DerivThreshold = (1 << 9);              // Derivative Threshold (default)
 float      PosDerivThreshold = (1 << 9);           // Pos Edge Derivative Threshold (default)
 float      NegDerivThreshold = (1 << 9);           // Neg Edge Derivative Threshold (default)
-float      cameraCenter = (float)(127 / 2);
+float      cameraCenter = (float)(127 / 2);       // center pixel
 
 
 // Steering control variables
@@ -124,81 +129,159 @@ bool run_once = false;
 
 // -- FETCH DATA:
 
-void grabCameraFrame()
+void acquireSamplesAndIntensity()
 {
-    uint32_t i = 0;
-    uint8_t fake_type = 4;                   // type of fake data if used
+  // putem calcula avgIntensity de aici deja...
+  averIntensity = 0;
+  for (i = 0; i < NUM_LINE_SCAN; i++)
+  {
+      GrabLineScanImage0[i] = TFC_LineScanImage0[i];
 
-    for (i = 0; i < NUM_LINE_SCAN; i++) // print one line worth of data (128) from Camera 0
-    {
-        GrabLineScanImage0[i] = TFC_LineScanImage0[i];
-    }
+      if (i >= FILTER_ENDS && i <= NUM_LINE_SCAN - FILTER_ENDS)
+      {
+        averIntensity += GrabLineScanImage0[i];
+      }
 
+  }
 
+  averIntensity = averIntensity / (NUM_LINE_SCAN - 2*FILTER_ENDS);
+  DerivThreshold = averIntensity / 10;
+  NegDerivThreshold = (float)-1 * (DerivThreshold);
+  PosDerivThreshold = (float)(DerivThreshold);
 }
 
-void derivativeLineScan(uint16_t* LineScanDataIn, float* DerivLineScanDataOut)
+void derivScanAndFindEdges(uint16_t* LineScanDataIn, float* DerivLineScanDataOut)
 {
+  for (int k = 0; k < sizeof(NegEdges) / sizeof(NegEdges[0]); k++)
+    NegEdges[k] = 0;
 
-  uint32_t i, minCnt = 0, maxCnt = 0;
-  float DerVal, upperDerVal, lowerDerVal = 0;
+  for (int k = 0; k < sizeof(PosEdges) / sizeof(PosEdges[0]); k++)
+    PosEdges[k] = 0;
 
-  maxDerVal = 0;
-  minDerVal = (float)(1 << 12);
-  aveDerVal = 0;
+
+  int indPosEdges = 0;
+  int indNegEdges = 0;
+
+  nrDifferentPosEdges = 0;
+  nrDifferentNegEdges = 0;
+
+  float DerVal = 0;
 
   minCnt = FILTER_ENDS;
   maxCnt = NUM_LINE_SCAN - FILTER_ENDS;
 
-  // TERMINAL_PRINTF("i, upperDerVal, lowerDerVal, DerVal\r\n");
-
-  for (i = minCnt; i < maxCnt; i++) // print one line worth of data from Camera 0
+  for (i = minCnt; i < maxCnt; i++)
   {
 
-    // store max light intensity value
-    if (LineScanDataIn[i] > MaxLightIntensity)
-      MaxLightIntensity = LineScanDataIn[i];
-
-    // store min light intensity value
-    if (LineScanDataIn[i] < MinLightIntensity)
-      MinLightIntensity = LineScanDataIn[i];
-
-
-    // Central Derivative
     if (i == minCnt)                         // start point
     {
       upperDerVal = (float)(LineScanDataIn[i + 1]);
-      lowerDerVal = (float)(LineScanDataIn[i]);  // make same as start point
+      lowerDerVal = (float)(LineScanDataIn[i]);
     }
-    else if (i == maxCnt - 1)                // end point
+    else if (i == maxCnt - 1)
     {
-      upperDerVal = (float)(LineScanDataIn[i]);   // make same as end point
+      upperDerVal = (float)(LineScanDataIn[i]);
       lowerDerVal = (float)(LineScanDataIn[i - 1]);
     }
-    else                                   // any other point
+    else
     {
       upperDerVal = (float)(LineScanDataIn[i + 1]);
       lowerDerVal = (float)(LineScanDataIn[i - 1]);
     }
     DerVal = (upperDerVal - lowerDerVal) / 2;
     DerivLineScanDataOut[i] = DerVal;
+
+    if (DerVal >= PosDerivThreshold) {
+      if (indPosEdges == 0)
+      {
+        nrDifferentPosEdges += 1;
+        PosEdges[indPosEdges] = i;
+        continue;
+      }
+
+      if (PosEdges[indPosEdges] != i - 1)
+      {
+        // daca nu sunt consecutive, salveaza si incrementeaza nr de edgeuri diferite
+        indPosEdges++;
+        PosEdges[indPosEdges] = i;
+        nrDifferentPosEdges += 1;
+      }
+      else {
+        /*  caz unic pos edge:
+        * daca gasim inca un edge fix langa dar mai la dreapta, pune-l pe ala pt ca e mai aproape de centru => pericol mai mare. Pt ca mereu un pos edge va fi in stanga. Linie neagra si apoi alba => POS EDGE
+        */
+        PosEdges[indPosEdges] = i;
+      }
+    }
+
+    if (DerVal <= NegDerivThreshold) {
+      if (indNegEdges == 0)
+      {
+        nrDifferentNegEdges += 1;
+        NegEdges[indNegEdges] = i;
+        continue;
+      }
+
+      if (NegEdges[indNegEdges] != i - 1)
+      {
+        // daca nu sunt consecutive
+        // a fost o pauza
+        indNegEdges++;
+        NegEdges[indNegEdges] = i;
+        nrDifferentNegEdges += 1;
+      }
+    }
   }
 }
 
 // -- PROCESS AND DECIDE:
 
-void adjustLights()
+void decideLineFromEdges()
 {
+  lastMarginPosition = marginPosition
 
-  DerivThreshold = (float)(MaxLightIntensity - MinLightIntensity) / 10;
-  NegDerivThreshold = (float)-1 * (DerivThreshold);
-  PosDerivThreshold = (float)(DerivThreshold);
+  if (nrDifferentNegEdges == 0 && nrDifferentPosEdges == 0)
+  {
+    CurrentTrackStatus = StraightRoad;
+  }
+
+  else if (nrDifferentNegEdges == 1 && nrDifferentPosEdges == 1 && (PosEdges[0] - NegEdges[0] >= MIN_LINE_WIDTH && PosEdges[0] - NegEdges[0] <= MAX_LINE_WIDTH))
+  {
+    // we have a found a line...
+    marginPosition = (PosEdges[0] + NegEdges[0]) / 2;
+    CurrentTrackStatus = LineFound;
+  }
+
+  else if (nrDifferentPosEdges == 1 && nrDifferentNegEdges == 0 && PosEdges[0] < cameraCenter)
+  {
+    // pre detected left line
+    marginPosition = PosEdges[0] / 2;
+    CurrentTrackStatus = LeftLine;
+  }
+
+  else if (nrDifferentNegEdges == 1 && nrDifferentPosEdges == 0 && NegEdges[0] > cameraCenter)
+  {
+
+    // pre detected right line
+    marginPosition = (NUM_LINE_SCAN + NegEdges[0]) / 2;
+    CurrentTrackStatus = RightLine;
+  }
+
+  else if (nrDifferentNegEdges == 2 && nrDifferentPosEdges == 2 && (((NegEdges[0] - PoseEdges[0]) <= MAX_LINE_WIDTH && (NegEdges[0] - PosEdges[0]) >= MIN_LINE_WIDTH) && ((NegEdges[1] - PoseEdges[1]) <= MAX_LINE_WIDTH && (NegEdges[1] - PosEdges[1]) >= MIN_LINE_WIDTH)))
+  {
+    CurrentTrackStatus = StartGateFound;
+  }
+
+  else {
+    CurrentTrackStatus = Unknown;
+  }
 
 }
 
 
 void findEdges_v2(float* derivLineScanData)
 {
+  
   int i;
 
   int minCnt = FILTER_ENDS;
@@ -237,6 +320,7 @@ void findEdges_v2(float* derivLineScanData)
       divNeg++;
       sumNeg += holderNeg[i];
     }
+
     else
     {
       if (divNeg != 0)
@@ -491,7 +575,7 @@ void SpeedControl()
   float LeftDriveRatio, RightDriveRatio;
 
   // set maximum speed allowed
-  switch (0)
+  switch (2)
   {
   case 0:
     // read value off pot0
@@ -513,6 +597,7 @@ void SpeedControl()
     MaxSpeed = LUDICROUS_SPEED; // 0.9
     break;
   default:
+    MaxSpeed = 0.4;
     break;
   }
 
