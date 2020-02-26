@@ -21,7 +21,7 @@ C:\Users\user\AppData\Local\Programs\Python\Python38-32
 ```
 git clone git@github.com:gubi7g/speedrun1-kl25z.git
 cd speedrun1-kl25z
-make (WORKS ONLY ON GIT CMD. DON'T ASK ME WHY!?!?!?)
+make (~~WORKS ONLY ON GIT CMD. DON'T ASK ME WHY!?!?!~~ make works only in Unix based terminals)
 ```
 
 # Camera:
