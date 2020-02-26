@@ -277,7 +277,7 @@ LD_SYS_LIBS :=-Wl,--start-group -lstdc++ -lsupc++ -lm -lc -lgcc -lnosys -lmbed -
 .PHONY: all lst size
 
 
-all: $(PROJECT).bin $(PROJECT).hex size
+all: $(PROJECT).bin $(PROJECT).hex size upload
 
 
 .s.o:
@@ -320,14 +320,16 @@ $(PROJECT).elf: $(OBJECTS) $(SYS_OBJECTS) $(PROJECT).link_script.ld
 $(PROJECT).bin: $(PROJECT).elf
 	$(ELF2BIN) -O binary $< $@
 	+@echo "===== bin file ready to flash: $(OBJDIR)/$@ ====="
-	+@echo "===== Writting to device... ====="
-	yes | cp -rf $@ /g/
-	+@echo "===== Succesfully wrote to device... ====="
 	
 
 $(PROJECT).hex: $(PROJECT).elf
 	$(ELF2BIN) -O ihex $< $@
 
+upload: $(PROJECT).bin
+	+@echo "===== Writting to device... ====="
+	yes | cp -rf $^ /g/
+	+@echo "===== Succesfully wrote to device... ====="
+	
 
 # Rules
 ###############################################################################

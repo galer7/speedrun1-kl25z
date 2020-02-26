@@ -1,28 +1,46 @@
+from pyqtgraph.Qt import QtGui, QtCore
+import numpy as np
 import pyqtgraph as pg
+from pyqtgraph.ptime import time
+import serial
 
+app = QtGui.QApplication([])
 
-xAxis = [x for x in range(128)]
-cameraLine = [0 for x in range(128)]
+p = pg.plot()
+p.setWindowTitle('live plot from serial')
+curve = p.plot()
 
-with serial.Serial('COM3', 115200) as ser:
-  while(True):
+data = [0]
 
-    # ser.flushInput()
-    # ser.flushOutput()
-    line = ser.readline()
-    try:
-      # print(line.decode('utf-8'))
-      cameraLine = [x for x in line.decode('utf-8').split(',')]
+def update():
+  with serial.Serial('COM3', 115200) as ser:
+    while(True):
 
-      cameraLine[0] = cameraLine[0][1:]
-      cameraLine[-1] = cameraLine[-1][:-2]
-      cameraLine = [int(x) for x in cameraLine]
-      # print(cameraLine)
-      pg.plot(xAxis, cameraLine)   # data can be a list of values or a numpy array
+      # ser.flushInput()
+      # ser.flushOutput()
+      line = ser.readline()
+      try:
+        # print(line.decode('utf-8'))
+        cameraLine = [x for x in line.decode('utf-8').split(',')]
 
-    except UnicodeDecodeError:
-      pass
-    except ValueError:
-      pass
-    except KeyboardInterrupt:
-      pass
+        cameraLine[0] = cameraLine[0][1:]
+        cameraLine[-1] = cameraLine[-1][:-2]
+        cameraLine = [int(x) for x in cameraLine]
+        # print(cameraLine)
+        pg.plot(xAxis, cameraLine)   # data can be a list of values or a numpy array
+
+      except UnicodeDecodeError:
+        pass
+      except ValueError:
+        pass
+      except KeyboardInterrupt:
+        pass
+
+timer = QtCore.QTimer()
+timer.timeout.connect(update)
+timer.start(0)
+
+if __name__ == '__main__':
+  import sys
+  if (sys.flags.interactive != 1) or not hasattr(QtCore, 'PYQT_VERSION'):
+    QtGui.QApplication.instance().exec_()
