@@ -10,7 +10,7 @@
 #define NUM_LINE_SCAN 128 // # of samples
 #define MAX_LINE_SCAN NUM_LINE_SCAN-1
 #define MIN_LINE_WIDTH 2
-#define MAX_LINE_WIDTH  15
+#define MAX_LINE_WIDTH  10
 #define MIN_START_WIDTH 16
 #define MAX_START_WIDTH 25
 #define FILTER_ENDS 0   // dead pixels to ignore
@@ -199,7 +199,7 @@ void derivScanAndFindEdges(uint16_t* LineScanDataIn, float* DerivLineScanDataOut
         continue;
       }
 
-      if (PosEdges[indPosEdges] != i - 1)
+      if (i - PosEdges[indPosEdges] > MAX_LINE_WIDTH)
       {
         // daca nu sunt consecutive, salveaza si incrementeaza nr de edgeuri diferite
         indPosEdges++;
@@ -222,7 +222,7 @@ void derivScanAndFindEdges(uint16_t* LineScanDataIn, float* DerivLineScanDataOut
         continue;
       }
 
-      if (NegEdges[indNegEdges] != i - 1)
+      if (i - NegEdges[indNegEdges] > MAX_LINE_WIDTH)
       {
         // daca nu sunt consecutive
         // a fost o pauza

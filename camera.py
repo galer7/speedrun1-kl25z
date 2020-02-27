@@ -5,6 +5,8 @@ xAxis = [x for x in range(128)]
 cameraLine = [0 for x in range(128)]
 plt.axis([0, 127, -2000, 5000])
 
+MAX_LINE_WIDTH = 5
+
 def derivLineScan(lineScan):
   derivLine = [0 for x in range(128)]
   prev = next = 0
@@ -30,17 +32,50 @@ def derivLineScan(lineScan):
   return derivLine
 
 def returnEdges(cameraLine, derivLine, thNeg, thPos):
+  nrDifferentNegEdges = 0
+  nrDifferentPosEdges = 0
+
   thisFrameNegEdges = []
   thisFramePosEdges = []
 
   for ind, (x, derivValue) in enumerate(zip(cameraLine, derivLine)):
     if derivValue >= thPos:
-      thisFramePosEdges.append([ind, x])
+      if thisFramePosEdges == []:
+        nrDifferentPosEdges += 1
+        thisFramePosEdges.append([ind, x])
+        continue
+        
+      if (ind - thisFramePosEdges[-1][0]) >= MAX_LINE_WIDTH:
+        thisFramePosEdges.append([ind, x])
+        nrDifferentPosEdges += 1
+      else:
+        thisFramePosEdges[-1] = [ind, x]
     
     if derivValue <= thNeg:
-      thisFrameNegEdges.append([ind, x])
+      if thisFrameNegEdges == []:
+        nrDifferentNegEdges += 1
+        thisFrameNegEdges.append([ind, x])
+        continue
+        
+      if (ind - thisFrameNegEdges[-1][0]) >= MAX_LINE_WIDTH:
+        thisFrameNegEdges.append([ind, x])
+        nrDifferentNegEdges += 1
 
-  return thisFrameNegEdges, thisFramePosEdges
+  return thisFrameNegEdges, thisFramePosEdges, nrDifferentNegEdges, nrDifferentPosEdges
+
+def TrackStatus(negEdges, posEdges):
+  if len(negEdges) == 0 and len(posEdges) == 0:
+    return "STRAIGHT ROAD"
+  elif len(negEdges) == 1 and len(posEdges) == 1:
+    return "LINE DETECTED"
+  elif len(negEdges) == 1 and len(posEdges) == 0:
+    return "LEFT LINE"
+  elif len(negEdges) == 0 and len(posEdges) == 1:
+    return "RIGHT LINE"
+  elif len(negEdges) == 2 and len(posEdges) == 2:
+    return "START GATE"
+  else:
+    return "UNKNOWN"
 
 with serial.Serial('COM3', 115200) as ser:
   frameNr = 0
@@ -55,7 +90,6 @@ with serial.Serial('COM3', 115200) as ser:
         cameraLine = [int(x) for x in line.decode('utf-8').split(',')]
         avgLine = [sum(cameraLine) / 128 for x in range(128)]
         plotDerivLineScan = derivLineScan(cameraLine)
-        negEdges, posEdges = returnEdges(cameraLine, plotDerivLineScan, -avgLine[0]/10, avgLine[0]/10)
 
         plt.clf()
         plt.axis([0, 127, -2000, 5000])
@@ -64,15 +98,24 @@ with serial.Serial('COM3', 115200) as ser:
         plt.plot(xAxis, avgLine)
         plt.plot(xAxis, plotDerivLineScan)
         plt.plot(xAxis, [x/10 for x in avgLine], [-x/10 for x in avgLine])
+
+        derivThPos = avgLine[0] / 8
+        derivThNeg = -derivThPos
         try:
 
-          x, y = zip(*posEdges)
-          plt.scatter(x, y, color='green')
-          x, y = zip(*negEdges)
+          negEdges, posEdges, nrDifferentNegEdges, nrDifferentPosEdges = returnEdges(cameraLine, plotDerivLineScan, derivThNeg, derivThPos)
 
-          plt.scatter(x, y, color='red')
-        except:
-          pass
+          if len(posEdges):
+            plt.scatter(*zip(*posEdges), color='green')
+          
+          if len(negEdges):
+            plt.scatter(*zip(*negEdges), color='red')
+
+          print('N: ', nrDifferentNegEdges, 'P: ', nrDifferentPosEdges)
+          currentTrackStatus = TrackStatus(negEdges, posEdges)
+          print(currentTrackStatus)
+        except Exception as e:
+          print(e)
 
         plt.pause(0.00001)
       except UnicodeDecodeError as e:
