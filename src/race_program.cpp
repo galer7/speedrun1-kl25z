@@ -14,9 +14,8 @@ void MainRace()
   //findEdges_v2(&DerivLineScanImage0[0]);
   decideLineFromEdges();
   decideSteerAndSpeed();
-  feedbackLights();
-  applySpeed();
   Drive();
+  feedbackLights();
 }
 
 void SpeedLimit()

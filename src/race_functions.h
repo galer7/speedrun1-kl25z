@@ -74,6 +74,7 @@ float      DerivError = 0;                         // Derivative of error
 float      CurrentSteerSetting = (MAX_STEER_RIGHT + MAX_STEER_LEFT) / 2;  // drive straight at first
 float      CurrentLeftDriveSetting = 0;            // Drive setting (left wheel)
 float      CurrentRightDriveSetting = 0;           // Drive setting (right wheel)
+
 int kSteerLeft = -MAX_STEER_LEFT / cameraCenter;
 int kSteerRight = MAX_STEER_RIGHT / cameraCenter;
 
@@ -339,13 +340,12 @@ void decideLineFromEdges()
 void decideSteerAndSpeed()
 {
   // common decision
-  int LeftDriveRatio, RightDriveRatio;
   if (currentTrackStatus == StraightRoad)
   {
     // daca e straight road, doar mergi drept in continuare si iesi repede.
     CurrentSteerSetting = 0;
-    LeftDriveRatio = 150 * MaxSpeed;
-    RightDriveRatio = 150 * MaxSpeed;
+    CurrentLeftDriveSetting = MaxSpeed;
+    CurrentRightDriveSetting = MaxSpeed;
     return;
   }
 
@@ -360,10 +360,11 @@ void decideSteerAndSpeed()
           go = false;   // STOP!!
           // TODO: apply the opposite of currentSpeedSetting for 0.1s for fast stop
           TFC_SetMotorPWM(-2 * MaxSpeed, -2 * MaxSpeed);
-          wait_ms(500);
+          wait_ms(300);
+          return;
         }
       }
-      return;
+
     }
   }
 
@@ -388,7 +389,8 @@ void decideSteerAndSpeed()
 
 void computeSteerSetting()
 {
-
+  // daca >0 => vrem viraj DREAPTA
+  // daca <0 => vrem viraj STANGA
   float offMarginDistance = cameraCenter - marginPosition;
   lastSteerSetting = CurrentSteerSetting;
 
@@ -400,26 +402,15 @@ void computeSteerSetting()
 
     
 
-    if (offMarginDistance < 0) {
-      // avem edge pe drepta
+    if (offMarginDistance > 0) {
+      // avem edge pe stanga
       Pout = kSteerRight * offMarginDistance + MAX_STEER_RIGHT; // valori pozitive
     }
-    else if (offMarginDistance > 0) {
+    else if (offMarginDistance < 0) {
       Pout = kSteerLeft * offMarginDistance + MAX_STEER_LEFT; // valori negative
     }
     else if (offMarginDistance == 0) {
       Pout = 0;
-    }
-
-  }
-  else {
-    if (offMarginDistance < 0)
-    {
-      Pout = MAX_STEER_LEFT;
-    }
-    else if  (offMarginDistance > 0)
-    {
-      Pout = MAX_STEER_RIGHT;
     }
 
   }
@@ -454,7 +445,6 @@ void applySpeed()
   // then adjust
 
   float ErrLimit;
-  float LeftDriveRatio, RightDriveRatio;
 
   // set maximum speed allowed
   switch (2)
@@ -484,8 +474,8 @@ void applySpeed()
   }
 
   // nothing special for drifting...
-  CurrentLeftDriveSetting = -(float)(MaxSpeed * 100 / 100); // aici era cu * MaxSpeed
-  CurrentRightDriveSetting = (float)(MaxSpeed * 100 / 100);
+  CurrentLeftDriveSetting = (float)(MaxSpeed); // aici era cu * MaxSpeed
+  CurrentRightDriveSetting = (float)(MaxSpeed);
 }
 
 void Drive()
@@ -528,7 +518,7 @@ void Drive()
       StartGateFoundCount = 0;
       // TODO: apply the opposite of currentSpeedSetting for 0.1s for fast stop
       TFC_SetMotorPWM(-2 * MaxSpeed, -2 * MaxSpeed);
-      wait_ms(500);
+      wait_ms(300);
     }
   }
 
@@ -542,7 +532,7 @@ void Drive()
 
   if (go)    // go!
   {
-    TFC_SetMotorPWM(CurrentRightDriveSetting, CurrentLeftDriveSetting);
+    TFC_SetMotorPWM(-CurrentRightDriveSetting, CurrentLeftDriveSetting);
   }
 }
 
