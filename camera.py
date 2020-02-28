@@ -36,50 +36,49 @@ def derivLineScanAndRetEdges(lineScan):
   thisFramePosEdges = []
 
   derivLine = [0 for x in range(128)]
-  prev, next = 0
+  prev = 0
+  next = 0
+  
   for ind, x in enumerate(lineScan):
-    try:
-      if ind == 0:
-        prev = x
-        next = lineScan[ind+1]
-      
-      elif ind == 127:
-        prev = lineScan[ind - 1]
-        next = x
-      
+    if ind == 0:
+      prev = x
+      next = lineScan[ind+1]
+    
+    elif ind == 127:
+      prev = lineScan[ind - 1]
+      next = x
+    
+    else:
+      prev = lineScan[ind - 1]
+      next = lineScan[ind + 1]
+
+    currentDer = (next - prev) / 2
+    derivLine[ind] = currentDer
+
+    if currentDer >= derivThPos:
+      if thisFramePosEdges == []:
+        nrDifferentPosEdges += 1
+        thisFramePosEdges.append([ind, x])
+        continue
+        
+      if (ind - thisFramePosEdges[-1][0]) >= MAX_LINE_WIDTH:
+        thisFramePosEdges.append([ind, x])
+        nrDifferentPosEdges += 1
       else:
-        prev = lineScan[ind - 1]
-        next = lineScan[ind + 1]
+        thisFramePosEdges[-1] = [ind, x]
+    
+    if currentDer <= derivThNeg:
+      if thisFrameNegEdges == []:
+        nrDifferentNegEdges += 1
+        thisFrameNegEdges.append([ind, x])
+        continue
+        
+      if (ind - thisFrameNegEdges[-1][0]) >= MAX_LINE_WIDTH:
+        thisFrameNegEdges.append([ind, x])
+        nrDifferentNegEdges += 1
+        
 
-      currentDer = (next - prev) / 2
-      derivLine[ind] = currentDer
-
-      if currentDer >= thPos:
-        if thisFramePosEdges == []:
-          nrDifferentPosEdges += 1
-          thisFramePosEdges.append([ind, x])
-          continue
-          
-        if (ind - thisFramePosEdges[-1][0]) >= MAX_LINE_WIDTH:
-          thisFramePosEdges.append([ind, x])
-          nrDifferentPosEdges += 1
-        else:
-          thisFramePosEdges[-1] = [ind, x]
-      
-      if currentDer <= thNeg:
-        if thisFrameNegEdges == []:
-          nrDifferentNegEdges += 1
-          thisFrameNegEdges.append([ind, x])
-          continue
-          
-        if (ind - thisFrameNegEdges[-1][0]) >= MAX_LINE_WIDTH:
-          thisFrameNegEdges.append([ind, x])
-          nrDifferentNegEdges += 1
-
-    except:
-      return [0 for x in range(128)], [], [], 0, 0
-
-  return derivLine, negEdges, posEdges, nrDifferentNegEdges, nrDifferentPosEdges
+  return derivLine, thisFrameNegEdges, thisFramePosEdges, nrDifferentNegEdges, nrDifferentPosEdges
 
 
 
@@ -101,11 +100,11 @@ def TrackStatus(negEdges, posEdges):
   else:
     return "UNKNOWN"
 
-with serial.Serial('COM3', 115200) as ser:
+with serial.Serial('COM4', 115200) as ser:
   frameNr = 0
   while True:
     margin_index = 0
-
+    print(frameNr)
     if not frameNr >= 16:
 
       # ser.flushInput()
@@ -118,25 +117,25 @@ with serial.Serial('COM3', 115200) as ser:
         avgIntensity = sum(cameraLine) / 128
         derivThPos = avgIntensity / 8
         derivThNeg = -derivThPos
-
-        plotDerivLineScan, negEdges, posEdges, nrDifferentNegEdges, nrDifferentPosEdges = derivLineScanAndRetEdges(cameraLine)
-
+        
         plt.clf()
         plt.axis([-cameraCenter, 127, -2000, 5000])
 
         plt.plot(xAxis, cameraLine)
         plt.plot([0, 127], [avgIntensity, avgIntensity])
-        plt.plot(xAxis, plotDerivLineScan)
         plt.plot([0, 127], [derivThPos, derivThPos], [derivThNeg, derivThNeg])
-
+        
         try:
-
+          # print(derivLineScanAndRetEdges(cameraLine))
+          plotDerivLineScan, negEdges, posEdges, nrDifferentNegEdges, nrDifferentPosEdges = derivLineScanAndRetEdges(cameraLine)
+          plt.plot(xAxis, plotDerivLineScan)
+          
           if len(posEdges):
             plt.scatter(*zip(*posEdges), color='green')
-          
+        
           if len(negEdges):
             plt.scatter(*zip(*negEdges), color='red')
-
+          
           currentTrackStatus = TrackStatus(negEdges, posEdges)
           offmarginDistance = cameraCenter - margin_index
 
@@ -145,38 +144,21 @@ with serial.Serial('COM3', 115200) as ser:
 
           print('N: ', nrDifferentNegEdges, 'P: ', nrDifferentPosEdges, 'offmarginDistance: ', offmarginDistance)
           print(currentTrackStatus)
+        
         except Exception as e:
+          exc_type, exc_obj, exc_tb = sys.exc_info()
           print(e)
+          print(exc_type, exc_tb.tb_lineno)
 
-        plt.pause(0.00001)
-      except UnicodeDecodeError as e:
-        exc_type, exc_obj, exc_tb = sys.exc_info()
-        # print(e)
-        print(line)
-        print(exc_type, exc_tb.tb_lineno)
-
-        pass
-
-      except ValueError  as e:
-        exc_type, exc_obj, exc_tb = sys.exc_info()
-        print(e)
-        print(exc_type, exc_tb.tb_lineno)
-
-        pass
-
-      except KeyboardInterrupt as e:
-        exc_type, exc_obj, exc_tb = sys.exc_info()
-        print(e)
-        print(exc_type, exc_tb.tb_lineno)
-
-        pass
+        
+        plt.pause(0.000001)
 
       except Exception as e:
         exc_type, exc_obj, exc_tb = sys.exc_info()
         print(e)
         print(exc_type, exc_tb.tb_lineno)
 
-        break
+        pass
     else: 
       ser.flushInput()
       ser.flushOutput()
