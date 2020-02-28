@@ -5,12 +5,19 @@ maxSteerLeft = -0.34
 
 cameraCenter = 63.5
 
-kSteerRight = - maxSteerLeft / cameraCenter
-kSteerLeft = maxSteerRight / cameraCenter
+kSteerRight = -maxSteerRight / cameraCenter
+kSteerLeft = maxSteerLeft / cameraCenter
 
 offMarginInterval = [x - 63.5 for x in range(128)]
+steer = []
 # print(offMarginInterval)
+for x in offMarginInterval:
+  if x <= 0:
+    # steer left 
+    steer.append(kSteerLeft*x + maxSteerLeft)
 
-plt.plot(offMarginInterval, [*[kSteerRight*(x - 63.5) + maxSteerRight for x in range(64)], *[kSteerLeft*(x) + maxSteerLeft for x in range(64)]])
+  else:
+    steer.append(kSteerRight*x + maxSteerRight)
 
+plt.plot(offMarginInterval, steer)
 plt.show()

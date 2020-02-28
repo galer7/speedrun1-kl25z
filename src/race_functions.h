@@ -10,7 +10,7 @@
 #define NUM_LINE_SCAN 128 // # of samples
 #define MAX_LINE_SCAN NUM_LINE_SCAN-1
 #define MIN_LINE_WIDTH 2
-#define MAX_LINE_WIDTH  10
+#define MAX_LINE_WIDTH  5
 #define MIN_START_WIDTH 16
 #define MAX_START_WIDTH 25
 #define FILTER_ENDS 0   // dead pixels to ignore
@@ -75,8 +75,8 @@ float      CurrentSteerSetting = (MAX_STEER_RIGHT + MAX_STEER_LEFT) / 2;  // dri
 float      CurrentLeftDriveSetting = 0;            // Drive setting (left wheel)
 float      CurrentRightDriveSetting = 0;           // Drive setting (right wheel)
 
-int kSteerLeft = -MAX_STEER_LEFT / cameraCenter;
-int kSteerRight = MAX_STEER_RIGHT / cameraCenter;
+int kSteerLeft = (float)(MAX_STEER_LEFT / cameraCenter); // the negative slope for the left quadrant
+int kSteerRight = -(float)(MAX_STEER_RIGHT / cameraCenter); // the negative slope for the right quadrant
 
 // Speed control vars
 float       MaxSpeed;                                    // maximum speed allowed
@@ -91,7 +91,7 @@ bool dev = false;
 uint16_t   startRaceTicker;                        // ticker at start of race1
 
 // Custom Data Types
-typedef enum { Unknown, LineFound, StartGateFound, LeftLine, RightLine, FilteredLine, StraightRoad, SpeedUp, SlowDown } TrackStatusType;
+enum TrackStatusType { Unknown, LineFound, StartGateFound, LeftLine, RightLine, FilteredLine, StraightRoad, SpeedUp, SlowDown };
 typedef enum { eMainRace, eSpeedLimit, eEightRace, eObstacleAvoidance } RaceType;
 
 TrackStatusType currentTrackStatus;                // current track status
@@ -142,9 +142,10 @@ bool run_once = false;
 
 // -- DEFINITIONS:
 
-void applySteerSetting();
-void computeSteerSetting();
-void applySpeed();
+void decideLineFromEdges();
+void decideSteerSetting();
+void decideSpeedSetting();
+void drive();
 
 // -- FETCH DATA:
 
@@ -164,7 +165,7 @@ void acquireSamplesAndIntensity()
   }
 
   averIntensity = averIntensity / (NUM_LINE_SCAN - 2*FILTER_ENDS); // compute avg light intensity
-  DerivThreshold = averIntensity / 10; // TODO: find perfect arguments...
+  DerivThreshold = averIntensity / 8; // TODO: find perfect arguments...
   NegDerivThreshold = (float)-1 * (DerivThreshold);
   PosDerivThreshold = (float)(DerivThreshold);
 }
@@ -172,11 +173,11 @@ void acquireSamplesAndIntensity()
 void derivScanAndFindEdges(uint16_t* LineScanDataIn, float* DerivLineScanDataOut)
 {
   // clean edge arrays
-  for (int k = 0; k < sizeof(NegEdges) / sizeof(NegEdges[0]); k++)
-    NegEdges[k] = 0;
+  //for (int k = 0; k < nrDifferentNegEdges - 1; k++)
+  //  NegEdges[k] = 0;
 
-  for (int k = 0; k < sizeof(PosEdges) / sizeof(PosEdges[0]); k++)
-    PosEdges[k] = 0;
+  //for (int k = 0; k < nrDifferentPosEdges - 1; k++)
+  //  PosEdges[k] = 0;
 
 
   int indPosEdges = 0;
@@ -244,8 +245,7 @@ void derivScanAndFindEdges(uint16_t* LineScanDataIn, float* DerivLineScanDataOut
 
       if (i - NegEdges[indNegEdges] > MAX_LINE_WIDTH)
       {
-        // daca nu sunt consecutive
-        // a fost o pauza
+        // daca nu sunt consecutive, salveaza-le
         indNegEdges++;
         NegEdges[indNegEdges] = i;
         nrDifferentNegEdges += 1;
@@ -266,15 +266,13 @@ void decideLineFromEdges()
   if (nrDifferentNegEdges == 0 && nrDifferentPosEdges == 0)
   {
     currentTrackStatus = StraightRoad;
-    return;
   }
 
-  else if (nrDifferentNegEdges == 1 && nrDifferentPosEdges == 1 && (PosEdges[0] - NegEdges[0] >= MIN_LINE_WIDTH && PosEdges[0] - NegEdges[0] <= MAX_LINE_WIDTH))
+  else if (nrDifferentNegEdges == 1 && nrDifferentPosEdges == 1 /*&& (PosEdges[0] - NegEdges[0] >= MIN_LINE_WIDTH && PosEdges[0] - NegEdges[0] <= MAX_LINE_WIDTH) */)
   {
     // we have a found a line...
     marginPosition = (PosEdges[0] + NegEdges[0]) / 2;
     currentTrackStatus = LineFound;
-    return;
   }
 
   else if (nrDifferentPosEdges == 1 && nrDifferentNegEdges == 0 && PosEdges[0] < cameraCenter)
@@ -282,7 +280,6 @@ void decideLineFromEdges()
     // pre detected left line
     marginPosition = PosEdges[0] - MAX_LINE_WIDTH / 2;
     currentTrackStatus = LeftLine;
-    return;
   }
 
   else if (nrDifferentNegEdges == 1 && nrDifferentPosEdges == 0 && NegEdges[0] > cameraCenter)
@@ -291,47 +288,56 @@ void decideLineFromEdges()
     // pre detected right line
     marginPosition = NegEdges[0] + MAX_LINE_WIDTH / 2;
     currentTrackStatus = RightLine;
-    return;
   }
 
   // cazuri care se aplica doar la race type-uri particulare:
   if (currentRaceType == eMainRace) {
 
-    if (nrDifferentNegEdges == 2 && nrDifferentPosEdges == 2 && (((NegEdges[0] - PosEdges[0]) <= MAX_LINE_WIDTH && (NegEdges[0] - PosEdges[0]) >= MIN_LINE_WIDTH) && ((NegEdges[1] - PosEdges[1]) <= MAX_LINE_WIDTH && (NegEdges[1] - PosEdges[1]) >= MIN_LINE_WIDTH)))
+    if (nrDifferentNegEdges == 2 && nrDifferentPosEdges == 2 /* && (((NegEdges[0] - PosEdges[0]) <= MAX_LINE_WIDTH && (NegEdges[0] - PosEdges[0]) >= MIN_LINE_WIDTH) && ((NegEdges[1] - PosEdges[1]) <= MAX_LINE_WIDTH && (NegEdges[1] - PosEdges[1]) >= MIN_LINE_WIDTH))*/)
     {
       currentTrackStatus = StartGateFound;
       StartGateFoundCount++;
-      return;
+      if (startGateStop)
+      {
+        if (StartGateFoundCount > 0)
+        {
+          go = false;   // STOP!!
+          return;
+        }
+      }
     }
-
     else {
       currentTrackStatus = Unknown;
+      marginPosition = -999;
       return;
     }
   }
   
   else if (currentRaceType == eSpeedLimit) {
-    if (nrDifferentNegEdges == 3 && nrDifferentPosEdges == 3 && (((NegEdges[0] - PosEdges[0]) <= MAX_LINE_WIDTH && (NegEdges[0] - PosEdges[0]) >= MIN_LINE_WIDTH) && ((NegEdges[1] - PosEdges[1]) <= MAX_LINE_WIDTH && (NegEdges[1] - PosEdges[1]) >= MIN_LINE_WIDTH)))
+    if (nrDifferentNegEdges == 3 && nrDifferentPosEdges == 3 /* && (((NegEdges[0] - PosEdges[0]) <= MAX_LINE_WIDTH && (NegEdges[0] - PosEdges[0]) >= MIN_LINE_WIDTH) && ((NegEdges[1] - PosEdges[1]) <= MAX_LINE_WIDTH && (NegEdges[1] - PosEdges[1]) >= MIN_LINE_WIDTH))*/ )
     {
       currentTrackStatus = SlowDown;
-      return;
     }
 
-    if (nrDifferentNegEdges == 4 && nrDifferentPosEdges == 4 && (((NegEdges[0] - PosEdges[0]) <= MAX_LINE_WIDTH && (NegEdges[0] - PosEdges[0]) >= MIN_LINE_WIDTH) && ((NegEdges[1] - PosEdges[1]) <= MAX_LINE_WIDTH && (NegEdges[1] - PosEdges[1]) >= MIN_LINE_WIDTH)))
+    if (nrDifferentNegEdges == 4 && nrDifferentPosEdges == 4 /* && (((NegEdges[0] - PosEdges[0]) <= MAX_LINE_WIDTH && (NegEdges[0] - PosEdges[0]) >= MIN_LINE_WIDTH) && ((NegEdges[1] - PosEdges[1]) <= MAX_LINE_WIDTH && (NegEdges[1] - PosEdges[1]) >= MIN_LINE_WIDTH)) */)
     {
       currentTrackStatus = SpeedUp;
-      return;
     }
   }
 
   else if (currentRaceType == eEightRace) {
     //nimic special lol
+    return;
   }
 
   else if (currentRaceType == eObstacleAvoidance)
   {
+    return;
 
   }
+
+  if (marginPosition > 127) marginPosition = 127;
+  if (marginPosition < 0) marginPosition = 0;
 }
 
 
@@ -340,90 +346,51 @@ void decideLineFromEdges()
 void decideSteerAndSpeed()
 {
   // common decision
-  if (currentTrackStatus == StraightRoad)
+  
+  if (currentRaceType == eMainRace && currentTrackStatus == StartGateFound)
   {
-    // daca e straight road, doar mergi drept in continuare si iesi repede.
-    CurrentSteerSetting = 0;
-    CurrentLeftDriveSetting = MaxSpeed;
-    CurrentRightDriveSetting = MaxSpeed;
-    return;
+    // really quick slowdown.
+    TFC_SetMotorPWM(-2 * MaxSpeed, -2 * MaxSpeed);
+    //wait_ms(300);
+    // just go to drive.
+  }
+  else
+  {
+    decideSteerSetting();
+    decideSpeedSetting();
   }
 
-  if (currentRaceType == eMainRace)
-  {
-    if (currentTrackStatus == StartGateFound)       // STARTING GATE FOUND
-    {
-      if (startGateStop)
-      {
-        if (StartGateFoundCount > 0)
-        {
-          go = false;   // STOP!!
-          // TODO: apply the opposite of currentSpeedSetting for 0.1s for fast stop
-          TFC_SetMotorPWM(-2 * MaxSpeed, -2 * MaxSpeed);
-          wait_ms(300);
-          return;
-        }
-      }
+  drive();
 
-    }
-  }
-
-  if (currentRaceType == eSpeedLimit)
-  {
-    if (currentTrackStatus == SpeedUp)
-    {
-
-    }
-
-    if (currentTrackStatus == SlowDown)
-    {
-
-    }
-  }
-
-  computeSteerSetting();
-  applySteerSetting();
-  applySpeed();
 }
 
 
-void computeSteerSetting()
+void decideSteerSetting()
 {
   // daca >0 => vrem viraj DREAPTA
   // daca <0 => vrem viraj STANGA
   float offMarginDistance = cameraCenter - marginPosition;
   lastSteerSetting = CurrentSteerSetting;
 
-  if (dev)
-  {
-    // sa testezi aici kSteerLeft si Right. Normal, ar trebui ca numitorul lor sa fie cameraCenter/2 + shiftuite, deoarece daca te aflii la > -cameraCenter/2 sau < cameraCenter/2, masina este deja scoasa de pe  traseu...
+  // sa testezi aici kSteerLeft si Right. Normal, ar trebui ca numitorul lor sa fie cameraCenter/2 + shiftuite, deoarece daca te aflii la > -cameraCenter/2 sau < cameraCenter/2, masina este deja scoasa de pe  traseu...
 
-    // corectie: remember anul trecut cand la viraj, el vedea linia pe mijloc chiar cand intra in curba, deci cred ca e ok sa lasam asa
+  // corectie: remember anul trecut cand la viraj, el vedea linia pe mijloc chiar cand intra in curba, deci cred ca e ok sa lasam asa
 
-    
-
+  if (currentTrackStatus == StraightRoad) {
+    CurrentSteerSetting = 0;
+  }
+  else {
     if (offMarginDistance > 0) {
-      // avem edge pe stanga
-      Pout = kSteerRight * offMarginDistance + MAX_STEER_RIGHT; // valori pozitive
+      CurrentSteerSetting = kSteerRight * offMarginDistance + MAX_STEER_RIGHT; // valori pozitive
     }
     else if (offMarginDistance < 0) {
-      Pout = kSteerLeft * offMarginDistance + MAX_STEER_LEFT; // valori negative
+      CurrentSteerSetting = kSteerLeft * offMarginDistance + MAX_STEER_LEFT; // valori negative
     }
-    else if (offMarginDistance == 0) {
-      Pout = 0;
+    else {
+      CurrentSteerSetting = 0;
     }
-
   }
 
-  CurrentSteerSetting = Pout;
-
-
-}
-
-void applySteerSetting()
-{
-
-  // make sure doesn't go beyond steering limits
   if (CurrentSteerSetting >= MAX_STEER_RIGHT)
   {
     CurrentSteerSetting = MAX_STEER_RIGHT;
@@ -433,18 +400,38 @@ void applySteerSetting()
     CurrentSteerSetting = MAX_STEER_LEFT;
   }
 
+  
+
   TFC_SetServo(0, CurrentSteerSetting);
+
 }
 
-
-
-void applySpeed()
+void decideSpeedSetting()
 {
+  if (currentTrackStatus == StraightRoad)
+  {
+    CurrentLeftDriveSetting = MaxSpeed;
+    CurrentRightDriveSetting = MaxSpeed;
+    return;
+  }
 
-  // Get max speed setting from reading pot0
-  // then adjust
+  if (currentRaceType == eSpeedLimit)
+  {
+    if (currentTrackStatus == SpeedUp)
+    {
+      CurrentLeftDriveSetting *= 2;
+      CurrentRightDriveSetting *= 2;
+      return;
+    }
 
-  float ErrLimit;
+    if (currentTrackStatus == SlowDown)
+    {
+      CurrentLeftDriveSetting /= 2;
+      CurrentRightDriveSetting /= 2;
+      return;
+    }
+  }
+
 
   // set maximum speed allowed
   switch (2)
@@ -476,9 +463,12 @@ void applySpeed()
   // nothing special for drifting...
   CurrentLeftDriveSetting = (float)(MaxSpeed); // aici era cu * MaxSpeed
   CurrentRightDriveSetting = (float)(MaxSpeed);
+
+  if (go)
+    TFC_SetMotorPWM(-CurrentRightDriveSetting, CurrentLeftDriveSetting);
 }
 
-void Drive()
+void drive()
 {
 
   // START!
@@ -491,8 +481,12 @@ void Drive()
       UnknownCount = 0;
       StartGateFoundCount = 0;
       startRaceTicker = TFC_Ticker[0];  // keep track of start of race
-      logDataIndex = 0;                 // reset log data index
       TFC_HBRIDGE_ENABLE;
+    }
+    else {
+      
+      TFC_SetMotorPWM(0, 0); //Make sure motors are off
+      TFC_HBRIDGE_DISABLE;
     }
   }
 
@@ -505,34 +499,6 @@ void Drive()
       go = false;
       StartGateFoundCount = 0;
     }
-  }
-
-  // EMERGENCY STOP!
-  // 'kill switch' to prevent crashes off-track
-  if (killSwitch)
-  {
-    if (UnknownCount > UNKNOWN_COUNT_MAX)    // if track not found after certain time
-    {
-      go = false;                            // kill engine
-      
-      StartGateFoundCount = 0;
-      // TODO: apply the opposite of currentSpeedSetting for 0.1s for fast stop
-      TFC_SetMotorPWM(-2 * MaxSpeed, -2 * MaxSpeed);
-      wait_ms(300);
-    }
-  }
-
-  // ****************
-
-  if (!go)   // stop!
-  {
-    TFC_SetMotorPWM(0, 0); //Make sure motors are off
-    TFC_HBRIDGE_DISABLE;
-  }
-
-  if (go)    // go!
-  {
-    TFC_SetMotorPWM(-CurrentRightDriveSetting, CurrentLeftDriveSetting);
   }
 }
 
@@ -672,4 +638,11 @@ void forceFeedbackLights(int var)
     TFC_BAT_LED3_OFF;
     break;
   }
+}
+
+const char* stringFromTrackStatus(TrackStatusType status)
+{
+  const char* strings[] = { "Unknown", "LineFound", "StartGateFound", "LeftLine", "RightLine", "FilteredLine", "StraightRoad", "SpeedUp", "SlowDown" };
+
+  return strings[status];
 }

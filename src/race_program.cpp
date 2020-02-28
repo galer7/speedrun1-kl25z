@@ -14,8 +14,15 @@ void MainRace()
   //findEdges_v2(&DerivLineScanImage0[0]);
   decideLineFromEdges();
   decideSteerAndSpeed();
-  Drive();
+
+
   feedbackLights();
+  PC.printf("%3.3f\n", marginPosition);
+  
+  PC.printf("%d\t\t%d\t%s", nrDifferentNegEdges, nrDifferentPosEdges, stringFromTrackStatus(currentTrackStatus));
+  wait_ms(500);
+
+
 }
 
 void SpeedLimit()
@@ -27,8 +34,11 @@ void SpeedLimit()
   derivScanAndFindEdges(&GrabLineScanImage0[0], &DerivLineScanImage0[0]); // computes the derivative and finds edges
   decideLineFromEdges();
   decideSteerAndSpeed();
-  Drive();
+
+
   feedbackLights();
+
+
 
 }
 
@@ -77,7 +87,6 @@ void chooseAndRunRace()
       
     case 0x0F:
       MainRace();
-      forceFeedbackLights(8);
       break;
 
     default:
