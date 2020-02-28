@@ -1,6 +1,7 @@
 // aici adaugam functiile de scanare care vor fi folosite in (aproape) toate celelalte programe
 
 #include "common.h"
+#include <cstring>
 #include TFC_PATH
 #include MBED_PATH
 
@@ -13,7 +14,7 @@
 #define MAX_LINE_WIDTH  5
 #define MIN_START_WIDTH 16
 #define MAX_START_WIDTH 25
-#define FILTER_ENDS 0   // dead pixels to ignore
+#define FILTER_ENDS 5   // dead pixels to ignore
 #define RANGE (NUM_LINE_SCAN - (2 * FILTER_ENDS))  // range of good pixels
 #define EDGE_WIDTH_ERROR 3
 
@@ -45,8 +46,8 @@ Timer timer;
 // -- CAMERA
 uint16_t   GrabLineScanImage0[NUM_LINE_SCAN]; // snapshot of camera data for this 'frame'
 float      DerivLineScanImage0[NUM_LINE_SCAN]; // derivative of line scan data
-int      NegEdges[NUM_LINE_SCAN]; // array that holds at which index the NegEdge is on the LineScan
-int      PosEdges[NUM_LINE_SCAN]; // array that holds at which index the PosEdge is on the LineScan
+int      NegEdges[NUM_LINE_SCAN] = {}; // array that holds at which index the NegEdge is on the LineScan
+int      PosEdges[NUM_LINE_SCAN] = {}; // array that holds at which index the PosEdge is on the LineScan
 
 int nrDifferentNegEdges = 0;
 int nrDifferentPosEdges = 0;
@@ -61,22 +62,22 @@ float      DerivThreshold = (1 << 9);              // Derivative Threshold (defa
 float      PosDerivThreshold = (1 << 9);           // Pos Edge Derivative Threshold (default)
 float      NegDerivThreshold = (1 << 9);           // Neg Edge Derivative Threshold (default)
 float      cameraCenter = (float)(127 / 2);       // center pixel
+float offMarginDistance;
 
 
 // Steering control variables
 float      marginPosition;                    // Current position of track line (in pixels -- 0 to 127)
 float      lastMarginPosition;                       // Last position of track line (in pixels -- 0 to 127)
-float      offMarginDistance = 0;                // Current line position error (used for derivative calc)
 float      AbsError;
 float      lastOffMarginDistance = 0;                   // Last line position error (used for derivative calc)
 float      SumLinePosError = 0;                    // Sum of line position error (used for integral calc)
 float      DerivError = 0;                         // Derivative of error
-float      CurrentSteerSetting = (MAX_STEER_RIGHT + MAX_STEER_LEFT) / 2;  // drive straight at first
+float      CurrentSteerSetting;  // drive straight at first
 float      CurrentLeftDriveSetting = 0;            // Drive setting (left wheel)
 float      CurrentRightDriveSetting = 0;           // Drive setting (right wheel)
 
-int kSteerLeft = (float)(MAX_STEER_LEFT / cameraCenter); // the negative slope for the left quadrant
-int kSteerRight = -(float)(MAX_STEER_RIGHT / cameraCenter); // the negative slope for the right quadrant
+float kSteerLeft = (MAX_STEER_LEFT / cameraCenter); // the negative slope for the left quadrant
+float kSteerRight = -(MAX_STEER_RIGHT / cameraCenter); // the negative slope for the right quadrant
 
 // Speed control vars
 float       MaxSpeed;                                    // maximum speed allowed
@@ -179,6 +180,8 @@ void derivScanAndFindEdges(uint16_t* LineScanDataIn, float* DerivLineScanDataOut
   //for (int k = 0; k < nrDifferentPosEdges - 1; k++)
   //  PosEdges[k] = 0;
 
+  std::memset(NegEdges, 0, sizeof(NegEdges));
+  std::memset(PosEdges, 0, sizeof(PosEdges));
 
   int indPosEdges = 0;
   int indNegEdges = 0;
@@ -213,19 +216,20 @@ void derivScanAndFindEdges(uint16_t* LineScanDataIn, float* DerivLineScanDataOut
     DerivLineScanDataOut[i] = DerVal;
 
     if (DerVal >= PosDerivThreshold) {
-      if (indPosEdges == 0)
+      if (nrDifferentPosEdges == 0)
       {
-        nrDifferentPosEdges += 1;
+        nrDifferentPosEdges++;
         PosEdges[indPosEdges] = i;
+
         continue;
       }
 
-      if (i - PosEdges[indPosEdges] > MAX_LINE_WIDTH)
+      if (nrDifferentPosEdges && i - PosEdges[indPosEdges] > MAX_LINE_WIDTH)
       {
         // daca nu sunt consecutive, salveaza si incrementeaza nr de edgeuri diferite
         indPosEdges++;
         PosEdges[indPosEdges] = i;
-        nrDifferentPosEdges += 1;
+        nrDifferentPosEdges++;
       }
       else {
         /*  caz unic pos edge:
@@ -236,19 +240,20 @@ void derivScanAndFindEdges(uint16_t* LineScanDataIn, float* DerivLineScanDataOut
     }
 
     if (DerVal <= NegDerivThreshold) {
-      if (indNegEdges == 0)
+      if (nrDifferentNegEdges == 0)
       {
-        nrDifferentNegEdges += 1;
+        nrDifferentNegEdges++;
         NegEdges[indNegEdges] = i;
+
         continue;
       }
 
-      if (i - NegEdges[indNegEdges] > MAX_LINE_WIDTH)
+      if (nrDifferentNegEdges > 0 && i - NegEdges[indNegEdges] > MAX_LINE_WIDTH)
       {
         // daca nu sunt consecutive, salveaza-le
         indNegEdges++;
         NegEdges[indNegEdges] = i;
-        nrDifferentNegEdges += 1;
+        nrDifferentNegEdges++;
       }
     }
   }
@@ -268,7 +273,7 @@ void decideLineFromEdges()
     currentTrackStatus = StraightRoad;
   }
 
-  else if (nrDifferentNegEdges == 1 && nrDifferentPosEdges == 1 /*&& (PosEdges[0] - NegEdges[0] >= MIN_LINE_WIDTH && PosEdges[0] - NegEdges[0] <= MAX_LINE_WIDTH) */)
+  else if (nrDifferentNegEdges == 1 && nrDifferentPosEdges == 1)
   {
     // we have a found a line...
     marginPosition = (PosEdges[0] + NegEdges[0]) / 2;
@@ -305,11 +310,6 @@ void decideLineFromEdges()
           return;
         }
       }
-    }
-    else {
-      currentTrackStatus = Unknown;
-      marginPosition = -999;
-      return;
     }
   }
   
@@ -369,7 +369,7 @@ void decideSteerSetting()
 {
   // daca >0 => vrem viraj DREAPTA
   // daca <0 => vrem viraj STANGA
-  float offMarginDistance = cameraCenter - marginPosition;
+  offMarginDistance = cameraCenter - marginPosition;
   lastSteerSetting = CurrentSteerSetting;
 
   // sa testezi aici kSteerLeft si Right. Normal, ar trebui ca numitorul lor sa fie cameraCenter/2 + shiftuite, deoarece daca te aflii la > -cameraCenter/2 sau < cameraCenter/2, masina este deja scoasa de pe  traseu...
@@ -390,6 +390,8 @@ void decideSteerSetting()
       CurrentSteerSetting = 0;
     }
   }
+  PC.printf("\nCurrent steer setting: %3.10f\n", CurrentSteerSetting);
+
 
   if (CurrentSteerSetting >= MAX_STEER_RIGHT)
   {

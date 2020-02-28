@@ -4,6 +4,9 @@
 #include TFC_PATH
 #include "serialCamera.h"
 
+
+void printPosNegEdges();
+void printEdgesNrAndStatus();
 void MainRace()
 {
   // main timed race
@@ -15,12 +18,14 @@ void MainRace()
   decideLineFromEdges();
   decideSteerAndSpeed();
 
-
   feedbackLights();
-  PC.printf("%3.3f\n", marginPosition);
   
-  PC.printf("%d\t\t%d\t%s", nrDifferentNegEdges, nrDifferentPosEdges, stringFromTrackStatus(currentTrackStatus));
-  wait_ms(500);
+  printEdgesNrAndStatus();
+  printPosNegEdges();
+  PC.printf("\nCurrent steer setting: %3.10f\n", CurrentSteerSetting);
+  PC.printf("kSteerRight: %.3f", kSteerRight);
+  PC.printf("kSteerLeft: %.3f", kSteerLeft);
+  //wait_ms(500);
 
 
 }
@@ -34,7 +39,6 @@ void SpeedLimit()
   derivScanAndFindEdges(&GrabLineScanImage0[0], &DerivLineScanImage0[0]); // computes the derivative and finds edges
   decideLineFromEdges();
   decideSteerAndSpeed();
-
 
   feedbackLights();
 
@@ -106,4 +110,24 @@ int main()
   while (1) {
     chooseAndRunRace();
   }
+}
+
+void printPosNegEdges()
+{
+  PC.printf("\nNEG EDGES: ");
+  for (int i = 0; i < nrDifferentNegEdges; i++)
+  {
+    PC.printf("%d ", NegEdges[i]);
+  }
+  PC.printf("\nPOS EDGES: ");
+  for (int i = 0; i < nrDifferentPosEdges; i++)
+  {
+    PC.printf("%d ", PosEdges[i]);
+  }
+  PC.printf("\n");
+
+}
+
+void printEdgesNrAndStatus() {
+  PC.printf("POS:%d NEG:%d STATUS:%s", nrDifferentNegEdges, nrDifferentPosEdges, stringFromTrackStatus(currentTrackStatus));
 }

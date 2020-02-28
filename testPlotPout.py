@@ -20,4 +20,8 @@ for x in offMarginInterval:
     steer.append(kSteerRight*x + maxSteerRight)
 
 plt.plot(offMarginInterval, steer)
+plt.xlabel('offmarginInterval (63.5 - marginPosition)')
+plt.ylabel('steer')
+plt.text(20, 0.2, 'steer > 0: viraj dreapta')
+plt.text(-60, 0.2, 'steer < 0: viraj stanga')
 plt.show()
