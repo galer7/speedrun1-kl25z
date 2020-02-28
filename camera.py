@@ -100,15 +100,13 @@ def TrackStatus(negEdges, posEdges):
   else:
     return "UNKNOWN"
 
-with serial.Serial('COM4', 115200) as ser:
+with serial.Serial('COM3', 115200) as ser:
   frameNr = 0
   while True:
     margin_index = 0
-    print(frameNr)
-    if not frameNr >= 16:
-
-      # ser.flushInput()
-      # ser.flushOutput()
+    # print(frameNr)
+    if not frameNr >= 4:
+      
       line = ser.readline()
       # print([int(x) for x in line.decode('ascii').split(',')])
       frameNr += 1
@@ -123,7 +121,8 @@ with serial.Serial('COM4', 115200) as ser:
 
         plt.plot(xAxis, cameraLine)
         plt.plot([0, 127], [avgIntensity, avgIntensity])
-        plt.plot([0, 127], [derivThPos, derivThPos], [derivThNeg, derivThNeg])
+        plt.plot([0, 127], [derivThPos, derivThPos])
+        plt.plot([0, 127], [derivThNeg, derivThNeg])
         
         try:
           # print(derivLineScanAndRetEdges(cameraLine))
@@ -145,13 +144,14 @@ with serial.Serial('COM4', 115200) as ser:
           print('N: ', nrDifferentNegEdges, 'P: ', nrDifferentPosEdges, 'offmarginDistance: ', offmarginDistance)
           print(currentTrackStatus)
         
+          plt.pause(0.0001)
+
         except Exception as e:
           exc_type, exc_obj, exc_tb = sys.exc_info()
           print(e)
           print(exc_type, exc_tb.tb_lineno)
 
         
-        plt.pause(0.000001)
 
       except Exception as e:
         exc_type, exc_obj, exc_tb = sys.exc_info()
@@ -159,6 +159,8 @@ with serial.Serial('COM4', 115200) as ser:
         print(exc_type, exc_tb.tb_lineno)
 
         pass
+
+
     else: 
       ser.flushInput()
       ser.flushOutput()
