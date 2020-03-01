@@ -180,17 +180,12 @@ void ESP8266::setUARTMode(void) {
   SendCMD(rs);
 }
 
-void ESP8266::startTCPConn(char *IP, int port, ){
+void ESP8266::startTCPConn(char *IP, int port){
     char rs[100];
     sprintf(rs, "AT+CIPSTART=\"TCP\",\"%s\",%d", IP, port);
     SendCMD(rs);
 }
 
-void ESP8266::startTCPConnMultiple(char* IP, int port, int connId) {
-  char rs[100];
-  sprintf(rs, "AT+CIPSTART=%d,\"TCP\",\"%s\",%d", IP, port);
-  SendCMD(rs);
-}
 
 
 void ESP8266::sendURL(char *URL, char *command){

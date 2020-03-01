@@ -3,9 +3,6 @@
 #include "race_functions.h"
 #include "serialCamera.h"
 #include "../ESP8266/ESP8266.h"
-#include "../mbed/features/netsocket/NetworkInterface.h"
-#include "../mbed-http/source/http_request.h"
-#include "../mbed-http/http_parser/http_parser.h"
 
 
 
@@ -15,15 +12,6 @@ void connectToWifi();
 
 void connectToWifi()
 {
-
-  NetworkInterface* network; /* obtain a NetworkInterface object */
-
-  const char body[] = "{\"hello\":\"world\"}";
-
-  
-
-  delete request; // also clears out the response
-
   ESP8266 esp(PTE0, PTE1, 115200);
   char* ssid = "UPC1371925";
   char* pass = "HHXPEEBU";
@@ -74,14 +62,6 @@ void connectToWifi()
   esp.GetIP(rcv);
   esp.RcvReply(rcv, 10000);
   PC.printf("%s", rcv);
-
-  HttpRequest* request = new HttpRequest(network, HTTP_POST, "http://httpbin.org/post");
-  request->set_header("Content-Type", "application/json");
-  HttpResponse* response = request->send(body, strlen(body));
-  // if response is NULL, check response->get_error()
-
-  printf("status is %d - %s\n", response->get_status_code(), response->get_status_message());
-  printf("body is:\n%s\n", response->get_body_as_string().c_str());
 
   //PC.printf("Getting Connection Status\r\n");
   //esp.GetConnStatus(rcv);
@@ -235,13 +215,13 @@ int main()
   PC.baud(115200);
    
   TFC_Init();
-  connectToWifi();
+  //connectToWifi();
 
   dev = true;
-  //while (1) {
-  //  chooseAndRunRace();
-  //  
-  //}
+  while (1) {
+    chooseAndRunRace();
+    
+  }
 }
 
 void printPosNegEdges()
