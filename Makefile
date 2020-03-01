@@ -47,6 +47,7 @@ PROJECT := speedrun1-kl25z
 # Objects and Paths
 
 OBJECTS += FRDM-TFC/TFC.o
+OBJECTS += ESP8266/ESP8266.o
 OBJECTS += src/common.o
 OBJECTS += src/race_program.o
 
@@ -76,6 +77,11 @@ INCLUDE_PATHS += -I../
 INCLUDE_PATHS += -I../.
 INCLUDE_PATHS += -I..//usr/src/mbed-sdk
 INCLUDE_PATHS += -I../FRDM-TFC
+INCLUDE_PATHS += -I../ESP8266
+INCLUDE_PATHS += -I../mbed-http/source
+INCLUDE_PATHS += -I../mbed-http/http_parser
+INCLUDE_PATHS += -I../mbed/features/netsocket
+INCLUDE_PATHS += -I../mbed/features
 INCLUDE_PATHS += -I../mbed
 INCLUDE_PATHS += -I../mbed/TARGET_KL25Z/TOOLCHAIN_GCC_ARM
 INCLUDE_PATHS += -I../mbed/drivers
@@ -237,11 +243,14 @@ ASM_FLAGS += -DARM_MATH_CM0PLUS
 ASM_FLAGS += -D__CORTEX_M0PLUS
 ASM_FLAGS += -I/usr/src/mbed-sdk
 ASM_FLAGS += -I../FRDM-TFC
+ASM_FLAGS += -I../ESP8266
+ASM_FLAGS += -I../mbed-http/source
 ASM_FLAGS += -I../mbed
 ASM_FLAGS += -I../mbed/TARGET_KL25Z/TOOLCHAIN_GCC_ARM
 ASM_FLAGS += -I../mbed/drivers
 ASM_FLAGS += -I../mbed/hal
 ASM_FLAGS += -I../mbed/platform
+ASM_FLAGS += -I../mbed/features
 ASM_FLAGS += -I../src
 ASM_FLAGS += -include
 ASM_FLAGS += /filer/workspace_data/exports/2/2834b41f73393a4e04cb6875c5c4de6d/speedrun1-kl25z/mbed_config.h

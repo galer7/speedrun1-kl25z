@@ -1,8 +1,6 @@
 #include "common.h"
 
-#include MBED_PATH
-
-Serial PC(USBTX,USBRX); 
+Serial PC(USBTX, USBRX); 
 
 Ticker TFC_TickerObj;
 

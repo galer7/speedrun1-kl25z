@@ -2,8 +2,6 @@
 
 #include "common.h"
 #include <cstring>
-#include TFC_PATH
-#include MBED_PATH
 
 // ____________________ CONSTANTS __________________:
 
@@ -150,7 +148,7 @@ void drive();
 
 // -- FETCH DATA:
 
-void acquireSamplesAndIntensity()
+uint16_t* acquireSamplesAndIntensity()
 {
   // putem calcula avgIntensity de aici deja...
   averIntensity = 0;
@@ -169,6 +167,8 @@ void acquireSamplesAndIntensity()
   DerivThreshold = averIntensity / 8; // TODO: find perfect arguments...
   NegDerivThreshold = (float)-1 * (DerivThreshold);
   PosDerivThreshold = (float)(DerivThreshold);
+
+  return GrabLineScanImage0;
 }
 
 void derivScanAndFindEdges(uint16_t* LineScanDataIn, float* DerivLineScanDataOut)

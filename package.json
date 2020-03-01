@@ -1,0 +1,23 @@
+{
+  "name": "speedrun1-kl25z",
+  "version": "1.0.0",
+  "description": "Local environment for KL25Z development using Makefile",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "nodemon server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gubi7g/speedrun1-kl25z.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/gubi7g/speedrun1-kl25z/issues"
+  },
+  "homepage": "https://github.com/gubi7g/speedrun1-kl25z#readme",
+  "dependencies": {
+    "express": "^4.17.1"
+  }
+}
