@@ -3,9 +3,9 @@ Local environment for KL25Z development using Makefile
 
 # Requirements:
 
-https://git-scm.com/
-https://developer.arm.com/tools-and-software/open-source-software/developer-tools/gnu-toolchain/gnu-rm/downloads/6-2017-q2-update
-https://www.python.org/
+1) https://git-scm.com/
+2) https://developer.arm.com/tools-and-software/open-source-software/developer-tools/gnu-toolchain/gnu-rm/downloads/6-2017-q2-update
+3) https://www.python.org/
 
 Don't forget to add last 2 dependencies to PATH.
 
