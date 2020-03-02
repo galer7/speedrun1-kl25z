@@ -175,9 +175,9 @@ void ESP8266::setTransparent(void){
 }
 
 void ESP8266::setUARTMode(void) {
-  char rs[20];
-  strcpy(rs, "AT+CIPMODE=1");
-  SendCMD(rs);
+    char rs[20];
+    strcpy(rs, "AT+CIPMODE=1");
+    SendCMD(rs);
 }
 
 void ESP8266::startTCPConn(char *IP, int port){
@@ -203,18 +203,3 @@ void ESP8266::sendURL(char *URL, char *command){
     wait(3);
     SendCMD(url);
 }
-
-void ESP8266::sendData(char* command)
-{
-  char snd[300], http_cmd[300];
-  strcpy(http_cmd, HTTPCMD);
-
-  strcat(http_cmd, "/");
-  strcat(http_cmd, protocol);
-
-  sprintf(snd, "AT+CIPSEND=0,%d", strlen(http_cmd));
-  SendCMD(snd);
-  //wait(3);
-  //SendCMD(data);
-}
-    

@@ -2,7 +2,7 @@
 #define ESP8266_H
 
 #include <string>
-#include "mbed.h"
+#include "./../mbed/mbed.h"
 
 class ESP8266
 {
@@ -38,7 +38,6 @@ void setTransparent(void);
 void startTCPConn(char * IP, int port);
 void sendURL(char *URL, char *command);
 void StartMode(int port, int mode);
-void sendData(char* command);
 void setUARTMode(void);
 
 private:

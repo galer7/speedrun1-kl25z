@@ -5,6 +5,7 @@
 #include "../ESP8266/ESP8266.h"
 
 
+ESP8266 esp(PTE0, PTE1, 115200);
 
 void printPosNegEdges();
 void printEdgesNrAndStatus();
@@ -12,7 +13,6 @@ void connectToWifi();
 
 void connectToWifi()
 {
-  ESP8266 esp(PTE0, PTE1, 115200);
   char* ssid = "UPC1371925";
   char* pass = "HHXPEEBU";
   char* serverIP = "192.168.0.19";
@@ -24,11 +24,16 @@ void connectToWifi()
 
   //PC.printf("START\r\n");
 
-  //PC.printf("Reset ESP\r\n");
-  //esp.Reset();
-  //esp.RcvReply(rcv, 10000);
-  //PC.printf("%s", rcv);
-  //esp.SendCMD("AT+CIPSERVER=0");
+  PC.printf("Getting IP\r\n");
+  esp.GetIP(rcv);
+  esp.RcvReply(rcv, 10000);
+  PC.printf("%s", rcv);
+
+  PC.printf("Reset ESP\r\n");
+  esp.Reset();
+  esp.RcvReply(rcv, 10000);
+  PC.printf("%s", rcv);
+  esp.SendCMD("AT+CIPSERVER=0");
 
   //esp.setTransparent();
   //esp.RcvReply(rcv, 10000);
@@ -73,31 +78,22 @@ void connectToWifi()
   //esp.RcvReply(rcv, 10000);
   //PC.printf("%s", rcv);
 
-  //PC.printf("Starting TCP connection...\r\n");
-  //esp.startTCPConn("time.jsontest.com", 80);
-  //esp.RcvReply(rcv, 10000);
-  //PC.printf("%s", rcv);
+  PC.printf("Starting TCP connection...\r\n");
+  esp.startTCPConn("time.jsontest.com", 80);
+  esp.RcvReply(rcv, 10000);
+  PC.printf("%s", rcv);
 
   //PC.printf("setting uart mode... \r\n");
   //esp.setUARTMode();
   //esp.RcvReply(rcv, 10000);
   //PC.printf("%s", rcv);
 
-  //char* getReq = "GET /?data=123 HTTP/1.0\nHost: localhost:8080\n\r\n";
-  //
 
-
-  //PC.printf("Sending data...\r\n");
-  //sprintf(snd, "AT+CIPSEND=%d", strlen(getReq));
-  //esp.SendCMD;
-
-  //esp.RcvReply(rcv, 20000);
-
-  //wait(0.5);
-  //PC.printf("Sending request...");
-  //esp.SendCMD("AT+CIPSEND=60\r\nGET / HTTP/1.1\r\nHost: time.jsontest.com\r\n\r\n");
-  //esp.RcvReply(rcv, 20000);
-  //PC.printf("%s", rcv);
+  wait(0.5);
+  PC.printf("Sending request...");
+  esp.SendCMD("AT+CIPSEND=60\r\nGET / HTTP/1.1\r\nHost: time.jsontest.com\r\n\r\n");
+  esp.RcvReply(rcv, 20000);
+  PC.printf("%s", rcv);
 
 
 
@@ -151,8 +147,6 @@ void SpeedLimit()
   decideSteerAndSpeed();
 
   feedbackLights();
-
-
 
 }
 
@@ -215,7 +209,7 @@ int main()
   PC.baud(115200);
    
   TFC_Init();
-  //connectToWifi();
+  connectToWifi();
 
   dev = true;
   while (1) {
@@ -242,50 +236,4 @@ void printPosNegEdges()
 
 void printEdgesNrAndStatus() {
   PC.printf("POS:%d NEG:%d STATUS:%s", nrDifferentNegEdges, nrDifferentPosEdges, stringFromTrackStatus(currentTrackStatus));
-}
-
-bool serial_find(Serial* serial, char* str_to_find, uint32_t timeout_s)
-{
-  // Use RTC (instead of interrupt) for timeout detection
-  time_t curr = time(NULL);
-
-  bool is_partial_match = false;
-  uint16_t match_ix = 0;
-  size_t str_to_find_len = strlen(str_to_find);
-
-  while (1) {
-    // timeout detection
-    if (time(NULL) - curr > timeout_s) return false;
-
-    while (serial->readable()) {
-      // also do timeout detection here...
-      if (time(NULL) - curr > timeout_s) return false;
-
-      char c = serial->getc();
-
-      if (!is_partial_match) {
-        // Find the first character in the stream
-        if (c == str_to_find[0]) {
-          if (str_to_find_len == 1) return true;
-
-          match_ix = 1;
-          is_partial_match = true;
-        }
-        continue;
-      }
-
-      // is_partial_match is correct, check remaining characters
-      if (c == str_to_find[match_ix]) {
-        if (str_to_find_len == match_ix + 1) return true;
-
-        match_ix++;
-      }
-      else {
-        // not a match anymore, continue
-        is_partial_match = false;
-      }
-    }
-  }
-
-  return false;
 }
