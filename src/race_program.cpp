@@ -168,9 +168,10 @@ void EightRace()
 
 void chooseAndRunRace()
 {
-
+  PC.printf("%d", TFC_GetDIP_Switch());
   switch (TFC_GetDIP_Switch())
   {
+
     case 0x08:
         serialCamera();
         forceFeedbackLights(8);
@@ -209,7 +210,7 @@ int main()
   PC.baud(115200);
    
   TFC_Init();
-  connectToWifi();
+  //connectToWifi();
 
   dev = true;
   while (1) {
