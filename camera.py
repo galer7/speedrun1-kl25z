@@ -113,7 +113,7 @@ with serial.Serial('COM3', 115200) as ser:
       try:
         cameraLine = [int(x) for x in line.decode('utf-8').split(',')]
         avgIntensity = sum(cameraLine) / 128
-        derivThPos = avgIntensity / 8
+        derivThPos = avgIntensity / 10
         derivThNeg = -derivThPos
         
         plt.clf()
